@@ -7,27 +7,73 @@ import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseInput from '@/components/ui/BaseInput.vue';
 import { oversightNav } from '@/data/navigation';
 import { graphNodes } from '@/data/mock';
+import { downloadDemoFile } from '@/services/demoActions';
+import { useUi } from '@/stores/ui';
 
 const selected = ref(graphNodes[0]);
+const search = ref('');
+const scale = ref(1);
+const ui = useUi();
+
+const findAnomaly = () => {
+  const match = graphNodes.find((node) =>
+    node.name.toLowerCase().includes(search.value.toLowerCase())
+  );
+  selected.value = match ?? [...graphNodes].sort((a, b) => b.risk - a.risk)[0];
+  ui.pushToast({
+    type: 'success',
+    title: 'Anomaliya topildi',
+    text: `${selected.value.name}: xavf darajasi ${selected.value.risk}.`
+  });
+};
+
+const exportGraph = () => {
+  downloadDemoFile('corrupt-alert-graph.json', graphNodes);
+  ui.pushToast({ type: 'success', title: 'Eksport tayyor', text: 'Fayl yuklab olindi.' });
+};
 </script>
 
 <template>
   <RoleShell title="Aloqalar grafi" subtitle="Neo4j visual risk monitoring" :nav="oversightNav">
     <section class="graph-page">
       <div class="panel filters">
-        <BaseInput label="Shaxs qidirish" placeholder="Ism yoki tashkilot" :icon="Search" />
+        <BaseInput
+          v-model="search"
+          label="Shaxs qidirish"
+          placeholder="Ism yoki tashkilot"
+          :icon="Search"
+        />
         <BaseInput label="Bog‘lanish darajasi" placeholder="1-5 hops" />
         <BaseInput label="Vaqt oralig‘i" placeholder="2024-2026" />
-        <BaseButton>Anomaliyalarni topish</BaseButton>
+        <BaseButton @click="findAnomaly">Anomaliyalarni topish</BaseButton>
       </div>
       <main class="graph panel">
         <div class="graph-toolbar">
-          <BaseButton variant="secondary" :icon="Plus" size="sm">Zoom</BaseButton>
-          <BaseButton variant="secondary" :icon="Minus" size="sm">Out</BaseButton>
-          <BaseButton variant="secondary" :icon="Maximize2" size="sm">Fit</BaseButton>
-          <BaseButton :icon="Download" size="sm">Eksport</BaseButton>
+          <BaseButton
+            variant="secondary"
+            :icon="Plus"
+            size="sm"
+            @click="scale = Math.min(1.5, scale + 0.1)"
+            >Zoom</BaseButton
+          >
+          <BaseButton
+            variant="secondary"
+            :icon="Minus"
+            size="sm"
+            @click="scale = Math.max(0.7, scale - 0.1)"
+            >Out</BaseButton
+          >
+          <BaseButton variant="secondary" :icon="Maximize2" size="sm" @click="scale = 1"
+            >Fit</BaseButton
+          >
+          <BaseButton :icon="Download" size="sm" @click="exportGraph">Eksport</BaseButton>
         </div>
-        <svg viewBox="0 0 100 100" role="img" aria-label="Korrupsiya monitoring aloqalar grafi">
+        <svg
+          viewBox="0 0 100 100"
+          role="img"
+          aria-label="Korrupsiya monitoring aloqalar grafi"
+          :style="{ transform: `scale(${scale})` }"
+        >
           <line x1="42" y1="34" x2="64" y2="50" />
           <line x1="64" y1="50" x2="76" y2="28" />
           <line x1="42" y1="34" x2="30" y2="58" />
@@ -85,6 +131,7 @@ svg {
     linear-gradient(var(--border-subtle) 1px, transparent 1px),
     linear-gradient(90deg, var(--border-subtle) 1px, transparent 1px), var(--gray-100);
   background-size: 22px 22px;
+  transition: transform 220ms var(--ease-apple);
 }
 
 line {

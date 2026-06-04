@@ -247,6 +247,13 @@ const finishTour = () => {
                 >
                   EN
                 </button>
+                <button
+                  type="button"
+                  :class="{ active: locale === 'uz-cyrl' }"
+                  @click="setLanguage('uz-cyrl')"
+                >
+                  ЎЗ
+                </button>
               </div>
               <button type="button" class="dropdown-button" @click="toggleTheme">
                 <Moon :size="16" />Dark mode

@@ -8,6 +8,7 @@ import { marketingLinks } from '@/data/navigation';
 
 const { locale, t } = useI18n();
 const open = ref(false);
+const mobileOpen = ref(false);
 const setLanguage = (lang) => {
   locale.value = lang;
   open.value = false;
@@ -40,13 +41,31 @@ const setLanguage = (lang) => {
           <button type="button" :class="{ active: locale === 'en' }" @click="setLanguage('en')">
             EN
           </button>
+          <button
+            type="button"
+            :class="{ active: locale === 'uz-cyrl' }"
+            @click="setLanguage('uz-cyrl')"
+          >
+            ЎЗ
+          </button>
         </div>
       </div>
       <RouterLink class="login-link" to="/login">{{ t('app.login') }}</RouterLink>
-      <button aria-label="Menyu" type="button" class="icon menu">
+      <button aria-label="Menyu" type="button" class="icon menu" @click="mobileOpen = !mobileOpen">
         <Menu :size="18" :stroke-width="1.5" />
       </button>
     </div>
+    <nav v-if="mobileOpen" class="mobile-nav" aria-label="Mobile marketing">
+      <RouterLink
+        v-for="link in marketingLinks"
+        :key="link.to"
+        :to="link.to"
+        @click="mobileOpen = false"
+      >
+        {{ link.label }}
+      </RouterLink>
+      <RouterLink to="/login" @click="mobileOpen = false">{{ t('app.login') }}</RouterLink>
+    </nav>
   </header>
 </template>
 
@@ -165,6 +184,31 @@ nav a.router-link-active {
   display: none;
 }
 
+.mobile-nav {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 16px;
+  left: 16px;
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--color-white);
+  padding: 8px;
+  box-shadow: var(--shadow-lg);
+}
+
+.mobile-nav a {
+  border-radius: var(--radius-md);
+  padding: 11px 12px;
+  color: var(--gray-800);
+  font-weight: 700;
+}
+
+.mobile-nav a:hover {
+  background: var(--gray-100);
+}
+
 @media (max-width: 760px) {
   nav {
     display: none;
@@ -176,6 +220,12 @@ nav a.router-link-active {
 
   .menu {
     display: grid;
+  }
+}
+
+@media (min-width: 761px) {
+  .mobile-nav {
+    display: none;
   }
 }
 </style>

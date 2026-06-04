@@ -47,10 +47,33 @@ const progress = computed(() => `${(step.value / 5) * 100}%`);
 const next = () => (step.value = Math.min(5, step.value + 1));
 const prev = () => (step.value = Math.max(1, step.value - 1));
 const saveDraft = () => {
+  window.localStorage.setItem(
+    'smartcourt-claim-draft',
+    JSON.stringify({
+      step: step.value,
+      selectedType: selectedType.value,
+      partyType: partyType.value,
+      uploadedFiles: uploadedFiles.value
+    })
+  );
   ui.pushToast({
     type: 'success',
     title: 'Qoralama saqlandi',
     text: 'Ariza qoralamasi lokal saqlandi.'
+  });
+};
+const addParty = () => {
+  ui.pushToast({
+    type: 'success',
+    title: 'Tomon qo‘shildi',
+    text: `${partyType.value} uchun yangi forma qo‘shildi.`
+  });
+};
+const tryMediation = () => {
+  ui.pushToast({
+    type: 'success',
+    title: 'Mediatsiya boshlandi',
+    text: 'MediatoBot demo sessiyasi yaratildi.'
   });
 };
 const addMockFile = () => {
@@ -154,7 +177,9 @@ const handleNext = () => {
               <BaseInput label="Manzil" placeholder="Toshkent, Yunusobod" />
               <BaseInput label="Telefon" placeholder="+998 90 000 00 00" />
             </div>
-            <BaseButton variant="secondary" :icon="Plus">Yana tomon qo‘shish</BaseButton>
+            <BaseButton variant="secondary" :icon="Plus" @click="addParty"
+              >Yana tomon qo‘shish</BaseButton
+            >
           </template>
 
           <template v-else-if="step === 3">
@@ -216,8 +241,10 @@ const handleNext = () => {
                 muvaffaqiyatli yechilgan.
               </p>
               <div class="toolbar">
-                <BaseButton variant="secondary">Mediatsiyani sinab ko‘rish</BaseButton>
-                <BaseButton>Sudga yuborish</BaseButton>
+                <BaseButton variant="secondary" @click="tryMediation"
+                  >Mediatsiyani sinab ko‘rish</BaseButton
+                >
+                <BaseButton @click="handleNext">Sudga yuborish</BaseButton>
               </div>
             </BaseCard>
           </template>

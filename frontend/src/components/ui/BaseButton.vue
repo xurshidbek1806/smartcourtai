@@ -1,19 +1,40 @@
 <script setup>
+import { getCurrentInstance } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+
+import { runDemoAction } from '@/services/demoActions';
+import { useUi } from '@/stores/ui';
+
 defineProps({
   variant: { type: String, default: 'primary' },
   size: { type: String, default: 'md' },
   loading: { type: Boolean, default: false },
+  disabled: { type: Boolean, default: false },
   icon: { type: [Object, Function], default: null },
-  iconPosition: { type: String, default: 'left' }
+  iconPosition: { type: String, default: 'left' },
+  actionLabel: { type: String, default: '' }
 });
+
+const instance = getCurrentInstance();
+const route = useRoute();
+const router = useRouter();
+const ui = useUi();
+
+const handleClick = (event) => {
+  if (instance?.vnode.props?.onClick) return;
+  const label = event.currentTarget.dataset.actionLabel || event.currentTarget.innerText;
+  runDemoAction({ label, ui, router, route });
+};
 </script>
 
 <template>
   <button
     class="btn"
     :class="[`btn-${variant}`, `btn-${size}`, { loading }]"
-    :disabled="loading"
+    :disabled="loading || disabled"
+    :data-action-label="actionLabel"
     type="button"
+    @click="handleClick"
   >
     <component :is="icon" v-if="icon && iconPosition !== 'right'" :size="18" :stroke-width="1.5" />
     <span><slot /></span>

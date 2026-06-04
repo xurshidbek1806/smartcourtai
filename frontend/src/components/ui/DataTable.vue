@@ -5,6 +5,7 @@ import { Archive, Download, FileText, Filter, Search, SlidersHorizontal } from '
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseModal from '@/components/ui/BaseModal.vue';
 import SideDrawer from '@/components/shared/SideDrawer.vue';
+import { downloadDemoFile } from '@/services/demoActions';
 import { useUi } from '@/stores/ui';
 
 const props = defineProps({
@@ -70,6 +71,34 @@ const clearFilters = () => {
 
 const exportTable = (format) => {
   exportOpen.value = false;
+  const data = filteredRows.value.map((row) =>
+    Object.fromEntries(props.columns.map((column, index) => [column, row[index]]))
+  );
+
+  if (format === 'CSV') {
+    const csv = [
+      props.columns.join(','),
+      ...filteredRows.value.map((row) =>
+        row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(',')
+      )
+    ].join('\n');
+    downloadDemoFile('smartcourt-table.csv', csv, 'text/csv;charset=utf-8');
+  } else if (format === 'JSON') {
+    downloadDemoFile('smartcourt-table.json', data);
+  } else {
+    downloadDemoFile(
+      'smartcourt-table.txt',
+      data
+        .map((row) =>
+          Object.entries(row)
+            .map(([key, value]) => `${key}: ${value}`)
+            .join(' | ')
+        )
+        .join('\n'),
+      'text/plain;charset=utf-8'
+    );
+  }
+
   ui.pushToast({
     type: 'success',
     title: 'Eksport tayyor',
