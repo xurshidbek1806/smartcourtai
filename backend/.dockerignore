@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.env
+.git/
+.gitignore
+storage/uploads/*
+storage/audio/*
+storage/exports/*
+*.md
+.pytest_cache/

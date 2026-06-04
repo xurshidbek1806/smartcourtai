@@ -1,0 +1,58 @@
+[
+  {
+    "reference": "2024-FK-0457",
+    "dispute_type": "labor",
+    "outcome": "Da'vo qanoatlantirildi",
+    "text": "Xodim shtat qisqartirilishi bahonasida noqonuniy ishdan bo'shatilgan. Sud xodimni ishga tikladi va majburiy ishda yurmagan davr uchun o'rtacha ish haqini undirdi. Asos: MK 180 va 186-moddalar.",
+    "court": "Toshkent shahar fuqarolik sudi"
+  },
+  {
+    "reference": "2024-FK-0712",
+    "dispute_type": "labor",
+    "outcome": "Da'vo qisman qanoatlantirildi",
+    "text": "Xodim ishdan bo'shatilishni noqonuniy deb da'vo qildi, biroq intizomiy jazo asosli ekani aniqlandi. Sud faqat ish haqi qarzini undirish qismida da'voni qanoatlantirdi.",
+    "court": "Andijon viloyat sudi"
+  },
+  {
+    "reference": "2023-IS-1203",
+    "dispute_type": "economic",
+    "outcome": "Da'vo qanoatlantirildi",
+    "text": "Yetkazib beruvchi shartnoma bo'yicha mahsulotni yetkazib bermadi va avans qaytarilmadi. Sud avans summasi va shartnomada belgilangan penyani undirdi. Asos: FK 324, 333-moddalar.",
+    "court": "Toshkent iqtisodiy sudi"
+  },
+  {
+    "reference": "2024-IS-0388",
+    "dispute_type": "economic",
+    "outcome": "Da'vo rad etildi",
+    "text": "Da'vogar shartnoma buzilganini isbotlay olmadi, yozma dalillar yetarli emas edi. Sud da'voni rad etdi.",
+    "court": "Samarqand iqtisodiy sudi"
+  },
+  {
+    "reference": "2024-OK-0091",
+    "dispute_type": "family",
+    "outcome": "Da'vo qanoatlantirildi",
+    "text": "Er-xotin nikohdan ajralgach umumiy mol-mulk teng bo'lindi. Bolalar uchun aliment daromadning uchdan biri miqdorida undirildi. Asos: OK 55, 96-moddalar.",
+    "court": "Farg'ona tuman sudi"
+  },
+  {
+    "reference": "2023-FK-0834",
+    "dispute_type": "property",
+    "outcome": "Da'vo qanoatlantirildi",
+    "text": "Mulkdor o'z ko'chmas mulkini qonunsiz egallab olgan shaxsdan vindikatsiya da'vosi orqali qaytarib oldi. Asos: FK 234-modda.",
+    "court": "Buxoro viloyat sudi"
+  },
+  {
+    "reference": "2024-JK-0156",
+    "dispute_type": "criminal",
+    "outcome": "Ayblov qisman tan olindi",
+    "text": "Firibgarlik bo'yicha ayblanuvchi aybiga iqror bo'ldi va zararni qopladi. Yarashuv va chin ko'ngildan pushaymonlik yengillashtiruvchi holat sifatida hisobga olinib, jazo yengillashtirildi. Asos: JK 168, 55-moddalar.",
+    "court": "Namangan shahar jinoyat sudi"
+  },
+  {
+    "reference": "2024-FK-1002",
+    "dispute_type": "civil",
+    "outcome": "Da'vo qanoatlantirildi",
+    "text": "Yetkazilgan real zarar to'liq qoplandi. Da'vogar sarflagan xarajatlarni hujjatlar bilan isbotladi. Asos: FK 14-modda.",
+    "court": "Toshkent shahar fuqarolik sudi"
+  }
+]
