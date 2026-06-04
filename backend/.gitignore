@@ -10,3 +10,5 @@ storage/exports/*
 !storage/.gitkeep
 .pytest_cache/
 *.db
+
+MENTOR_PITCH.md
