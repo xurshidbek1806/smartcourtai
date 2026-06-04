@@ -26,7 +26,9 @@ const props = defineProps({
 
 const route = useRoute();
 const pattern = computed(() => route.matched[0]?.path ?? route.path);
-const page = computed(() => props.pages[pattern.value] ?? props.pages[route.path] ?? props.fallback);
+const page = computed(
+  () => props.pages[pattern.value] ?? props.pages[route.path] ?? props.fallback
+);
 </script>
 
 <template>

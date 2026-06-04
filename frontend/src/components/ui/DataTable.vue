@@ -40,9 +40,7 @@ const filteredRows = computed(() => {
 
   return props.rows.filter((row) => {
     const text = rowText(row);
-    const rowScore = Math.max(
-      ...row.map((cell) => Number(String(cell).match(/\d+/)?.[0] ?? 0))
-    );
+    const rowScore = Math.max(...row.map((cell) => Number(String(cell).match(/\d+/)?.[0] ?? 0)));
 
     return (
       (!query || text.includes(query)) &&
@@ -89,7 +87,12 @@ const exportTable = (format) => {
       </label>
       <div class="toolbar-actions">
         <span>{{ filteredRows.length }} ta yozuv</span>
-        <BaseButton variant="secondary" size="sm" :icon="Filter" @click="filtersOpen = !filtersOpen">
+        <BaseButton
+          variant="secondary"
+          size="sm"
+          :icon="Filter"
+          @click="filtersOpen = !filtersOpen"
+        >
           Filter
         </BaseButton>
         <BaseButton variant="secondary" size="sm" :icon="Download" @click="exportOpen = true">
@@ -143,7 +146,11 @@ const exportTable = (format) => {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(row, rowIndex) in filteredRows" :key="row.join('-')" @click="selectedRow = row">
+          <tr
+            v-for="(row, rowIndex) in filteredRows"
+            :key="row.join('-')"
+            @click="selectedRow = row"
+          >
             <td v-for="(cell, cellIndex) in row" :key="`${rowIndex}-${cellIndex}`">
               <span v-if="statusTone(cell)" class="status-pill" :class="`tone-${statusTone(cell)}`">
                 {{ cell }}
@@ -159,7 +166,9 @@ const exportTable = (format) => {
       <Archive :size="36" :stroke-width="1.5" />
       <h3>Bo‘sh ro‘yxat</h3>
       <p>Mos yozuv topilmadi. Filterlarni tozalab qayta tekshiring.</p>
-      <BaseButton variant="secondary" size="sm" @click="clearFilters">Filterlarni tozalash</BaseButton>
+      <BaseButton variant="secondary" size="sm" @click="clearFilters"
+        >Filterlarni tozalash</BaseButton
+      >
     </section>
 
     <BaseModal :open="exportOpen" title="Eksport formatini tanlang" @close="exportOpen = false">

@@ -7,7 +7,12 @@ defineProps({
 
 <template>
   <div class="charts">
-    <svg class="line-chart" viewBox="0 0 320 180" role="img" aria-label="Platforma metrikalari chizig‘i">
+    <svg
+      class="line-chart"
+      viewBox="0 0 320 180"
+      role="img"
+      aria-label="Platforma metrikalari chizig‘i"
+    >
       <polyline
         fill="none"
         stroke="var(--stat-blue)"

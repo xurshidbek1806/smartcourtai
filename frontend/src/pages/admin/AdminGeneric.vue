@@ -12,5 +12,10 @@ const fallback = {
 </script>
 
 <template>
-  <ConfiguredPage shell-title="Admin panel" :nav="adminNav" :pages="adminPages" :fallback="fallback" />
+  <ConfiguredPage
+    shell-title="Admin panel"
+    :nav="adminNav"
+    :pages="adminPages"
+    :fallback="fallback"
+  />
 </template>

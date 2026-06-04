@@ -23,7 +23,9 @@ import { modelCards } from '@/data/mock';
         <BaseCard v-for="model in modelCards" :key="model.name" interactive>
           <div class="model-head">
             <h2>{{ model.name }}</h2>
-            <BaseBadge :variant="model.status === 'Faol' ? 'default' : 'outline'">{{ model.status }}</BaseBadge>
+            <BaseBadge :variant="model.status === 'Faol' ? 'default' : 'outline'">{{
+              model.status
+            }}</BaseBadge>
           </div>
           <p>Versiya: {{ model.version }}</p>
           <p>Aniqlik: {{ model.accuracy }}</p>

@@ -21,7 +21,9 @@ const setLanguage = (lang) => {
       <span>SmartCourt AI</span>
     </RouterLink>
     <nav aria-label="Marketing">
-      <RouterLink v-for="link in marketingLinks" :key="link.to" :to="link.to">{{ link.label }}</RouterLink>
+      <RouterLink v-for="link in marketingLinks" :key="link.to" :to="link.to">{{
+        link.label
+      }}</RouterLink>
     </nav>
     <div class="actions">
       <div class="lang-menu">
@@ -29,13 +31,21 @@ const setLanguage = (lang) => {
           <Languages :size="18" :stroke-width="1.5" />
         </button>
         <div v-if="open" class="lang-popover">
-          <button type="button" :class="{ active: locale === 'uz' }" @click="setLanguage('uz')">UZ</button>
-          <button type="button" :class="{ active: locale === 'ru' }" @click="setLanguage('ru')">RU</button>
-          <button type="button" :class="{ active: locale === 'en' }" @click="setLanguage('en')">EN</button>
+          <button type="button" :class="{ active: locale === 'uz' }" @click="setLanguage('uz')">
+            UZ
+          </button>
+          <button type="button" :class="{ active: locale === 'ru' }" @click="setLanguage('ru')">
+            RU
+          </button>
+          <button type="button" :class="{ active: locale === 'en' }" @click="setLanguage('en')">
+            EN
+          </button>
         </div>
       </div>
       <RouterLink class="login-link" to="/login">{{ t('app.login') }}</RouterLink>
-      <button aria-label="Menyu" type="button" class="icon menu"><Menu :size="18" :stroke-width="1.5" /></button>
+      <button aria-label="Menyu" type="button" class="icon menu">
+        <Menu :size="18" :stroke-width="1.5" />
+      </button>
     </div>
   </header>
 </template>

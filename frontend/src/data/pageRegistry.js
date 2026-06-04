@@ -24,9 +24,15 @@ export const marketingPages = {
       'JustiScribe, LexPredictor, SmartJudge, EvidentAI va MediatoBot bir oqimda ishlaydi.',
     primaryAction: "Demo ko'rish",
     cards: [
-      { title: 'Real-time stenogramma', text: 'Whisper streaming, speaker diarization va bookmarklar.' },
+      {
+        title: 'Real-time stenogramma',
+        text: 'Whisper streaming, speaker diarization va bookmarklar.'
+      },
       { title: 'Pretsedent qidiruv', text: 'O‘xshash ishlar, ehtimol va qonuniy asoslar.' },
-      { title: 'Qaror qoralamasi', text: 'Qonun moddalari va citation bilan tahrirlanadigan draft.' },
+      {
+        title: 'Qaror qoralamasi',
+        text: 'Qonun moddalari va citation bilan tahrirlanadigan draft.'
+      },
       { title: 'Dalil tahlili', text: 'PDF, rasm, audio, video va DOCX dalillarni tekshirish.' }
     ]
   },
@@ -57,7 +63,10 @@ export const marketingPages = {
       { label: 'Relational DB', value: 'PostgreSQL' }
     ],
     cards: [
-      { title: 'BFF pattern', text: 'Frontend API route yoki gateway orqali backend bilan ishlaydi.' },
+      {
+        title: 'BFF pattern',
+        text: 'Frontend API route yoki gateway orqali backend bilan ishlaydi.'
+      },
       { title: 'WebSocket', text: 'Live majlis, audit log va AI streaming uchun.' },
       { title: 'Server state', text: 'TanStack Query bilan cache va refetch nazorati.' }
     ]
@@ -68,7 +77,10 @@ export const marketingPages = {
     description: 'On-Premise, ISO 27001, GDPR/UzPrivacy, audit log, access control va encryption.',
     cards: [
       { title: 'On-Premise', text: 'Sud infratuzilmasidan tashqariga ma’lumot chiqmaydi.' },
-      { title: 'Audit log', text: 'Har bir foydalanuvchi harakati vaqt, rol va IP bilan saqlanadi.' },
+      {
+        title: 'Audit log',
+        text: 'Har bir foydalanuvchi harakati vaqt, rol va IP bilan saqlanadi.'
+      },
       { title: 'Anonimlashtirish', text: 'Nashrdan oldin shaxsiy ma’lumotlar yashiriladi.' }
     ]
   },
@@ -1430,4 +1442,3 @@ export const settingsPages = {
     ]
   }
 };
-

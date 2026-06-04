@@ -47,8 +47,8 @@ const roles = [
         <p class="eyebrow reveal">O‘zbekiston sud tizimi uchun AI ekotizimi</p>
         <h1 class="page-title reveal">Adolat. Tezroq. Aniqroq.</h1>
         <p class="lead reveal">
-          Sun’iy intellekt yordamida sud jarayonlarini 60% ga tezlashtiring, dalillarni
-          avtomatik tahlil qiling va qarorlarni qonuniy asoslar bilan tayyorlang.
+          Sun’iy intellekt yordamida sud jarayonlarini 60% ga tezlashtiring, dalillarni avtomatik
+          tahlil qiling va qarorlarni qonuniy asoslar bilan tayyorlang.
         </p>
         <div class="hero-actions reveal">
           <BaseButton size="xl" :icon="Play">{{ t('app.demo') }}</BaseButton>
@@ -77,12 +77,14 @@ const roles = [
       <p class="eyebrow">Jarayon</p>
       <h2 class="section-title">Sud ishlarini AI bilan bitta oqimga yig‘ing.</h2>
       <div class="grid grid-4 steps">
-        <BaseCard v-for="(step, index) in ['Qabul', 'Tahlil', 'Majlis', 'Qaror']" :key="step" interactive>
+        <BaseCard
+          v-for="(step, index) in ['Qabul', 'Tahlil', 'Majlis', 'Qaror']"
+          :key="step"
+          interactive
+        >
           <span class="step-no">0{{ index + 1 }}</span>
           <h3>{{ step }}</h3>
-          <p>
-            {{ step }} bosqichi uchun avtomatik tekshiruv, audit izi va real-time tavsiyalar.
-          </p>
+          <p>{{ step }} bosqichi uchun avtomatik tekshiruv, audit izi va real-time tavsiyalar.</p>
         </BaseCard>
       </div>
     </section>
@@ -126,15 +128,14 @@ const roles = [
       <BaseCard variant="filled">
         <h3>5 bosqichli ariza wizardi</h3>
         <p>
-          Nizo turi, tomonlar, tafsilotlar, dalillar, ko‘rib chiqish va yuborish bosqichlari
-          TZdagi tartib bo‘yicha ishlaydi.
+          Nizo turi, tomonlar, tafsilotlar, dalillar, ko‘rib chiqish va yuborish bosqichlari TZdagi
+          tartib bo‘yicha ishlaydi.
         </p>
       </BaseCard>
       <BaseCard variant="filled">
         <h3>AI yuridik maslahatchi</h3>
         <p>
-          Chat oynasi, oldingi suhbatlar, fayl/mikrofon/yuborish tugmalari va tezkor savollar
-          bilan.
+          Chat oynasi, oldingi suhbatlar, fayl/mikrofon/yuborish tugmalari va tezkor savollar bilan.
         </p>
       </BaseCard>
     </section>
@@ -153,7 +154,19 @@ const roles = [
 
     <section class="tech">
       <div class="marquee" aria-label="Texnologiyalar">
-        <span v-for="tech in ['Llama-3', 'Whisper', 'Neo4j', 'PostgreSQL', 'Qdrant', 'OneID', 'Mapbox', 'Vue 3']" :key="tech">
+        <span
+          v-for="tech in [
+            'Llama-3',
+            'Whisper',
+            'Neo4j',
+            'PostgreSQL',
+            'Qdrant',
+            'OneID',
+            'Mapbox',
+            'Vue 3'
+          ]"
+          :key="tech"
+        >
           {{ tech }}
         </span>
       </div>

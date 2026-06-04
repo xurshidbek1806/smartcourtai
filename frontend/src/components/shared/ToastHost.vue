@@ -9,7 +9,12 @@ const ui = useUi();
 <template>
   <Teleport to="body">
     <div class="toast-host" aria-live="polite">
-      <article v-for="toast in ui.state.toasts" :key="toast.id" class="toast" :class="`tone-${toast.type}`">
+      <article
+        v-for="toast in ui.state.toasts"
+        :key="toast.id"
+        class="toast"
+        :class="`tone-${toast.type}`"
+      >
         <CheckCircle2 v-if="toast.type === 'success'" :size="20" :stroke-width="1.5" />
         <XCircle v-else-if="toast.type === 'error'" :size="20" :stroke-width="1.5" />
         <Info v-else :size="20" :stroke-width="1.5" />

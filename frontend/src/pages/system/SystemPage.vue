@@ -17,7 +17,11 @@ const title = computed(() => {
 
 <template>
   <main class="system">
-    <component :is="route.path.includes('offline') ? WifiOff : Wrench" :size="42" :stroke-width="1.5" />
+    <component
+      :is="route.path.includes('offline') ? WifiOff : Wrench"
+      :size="42"
+      :stroke-width="1.5"
+    />
     <h1>{{ title }}</h1>
     <p class="muted">SmartCourt AI marshrutlari himoyalangan va monitoring ostida.</p>
     <RouterLink to="/"><BaseButton>Bosh sahifaga qaytish</BaseButton></RouterLink>

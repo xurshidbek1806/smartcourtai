@@ -17,5 +17,10 @@ const pages = {
 </script>
 
 <template>
-  <ConfiguredPage shell-title="Fuqaro portali" :nav="portalNav" :pages="pages" :fallback="fallback" />
+  <ConfiguredPage
+    shell-title="Fuqaro portali"
+    :nav="portalNav"
+    :pages="pages"
+    :fallback="fallback"
+  />
 </template>

@@ -1,5 +1,14 @@
 <script setup>
-import { Activity, AlertTriangle, Cpu, Database, Download, Server, ShieldCheck, Users } from 'lucide-vue-next';
+import {
+  Activity,
+  AlertTriangle,
+  Cpu,
+  Database,
+  Download,
+  Server,
+  ShieldCheck,
+  Users
+} from 'lucide-vue-next';
 
 import RoleShell from '@/layouts/RoleShell.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
@@ -30,7 +39,11 @@ const health = [
       </header>
 
       <section class="metrics">
-        <article v-for="(kpi, index) in kpis" :key="kpi.label" :class="`tone-${index === 1 ? 'green' : index === 2 ? 'red' : 'blue'}`">
+        <article
+          v-for="(kpi, index) in kpis"
+          :key="kpi.label"
+          :class="`tone-${index === 1 ? 'green' : index === 2 ? 'red' : 'blue'}`"
+        >
           <span>{{ kpi.label }}</span>
           <strong>{{ kpi.value }}</strong>
           <small>{{ kpi.delta }}</small>
@@ -66,9 +79,14 @@ const health = [
                 <p class="eyebrow">Audit</p>
                 <h2>So‘nggi audit loglar</h2>
               </div>
-              <RouterLink to="/admin/users"><BaseButton variant="ghost" :icon="Users" size="sm">Users</BaseButton></RouterLink>
+              <RouterLink to="/admin/users"
+                ><BaseButton variant="ghost" :icon="Users" size="sm">Users</BaseButton></RouterLink
+              >
             </div>
-            <DataTable :columns="['Vaqt', 'Foydalanuvchi', 'Rol', 'Harakat', 'IP', 'Holat']" :rows="auditRows" />
+            <DataTable
+              :columns="['Vaqt', 'Foydalanuvchi', 'Rol', 'Harakat', 'IP', 'Holat']"
+              :rows="auditRows"
+            />
           </section>
         </main>
 

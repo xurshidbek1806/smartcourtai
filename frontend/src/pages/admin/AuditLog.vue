@@ -14,13 +14,27 @@ const ui = useUi();
 const open = ref(false);
 const auditTimeline = [
   { time: '14:32', title: 'Login', text: 'Karimov A. SmartJudge moduliga kirdi.', tone: 'success' },
-  { time: '14:30', title: 'Export', text: 'Admin Root audit loglarni JSON formatda eksport qildi.', tone: 'info' },
-  { time: '14:21', title: 'Permission change', text: 'External login attempt bloklandi.', tone: 'danger' }
+  {
+    time: '14:30',
+    title: 'Export',
+    text: 'Admin Root audit loglarni JSON formatda eksport qildi.',
+    tone: 'info'
+  },
+  {
+    time: '14:21',
+    title: 'Permission change',
+    text: 'External login attempt bloklandi.',
+    tone: 'danger'
+  }
 ];
 
 const exportAudit = (format) => {
   open.value = false;
-  ui.pushToast({ type: 'success', title: 'Eksport tayyor', text: `Audit log ${format} formatida tayyor.` });
+  ui.pushToast({
+    type: 'success',
+    title: 'Eksport tayyor',
+    text: `Audit log ${format} formatida tayyor.`
+  });
 };
 </script>
 
@@ -33,11 +47,25 @@ const exportAudit = (format) => {
           <h1>Audit log</h1>
         </div>
         <div class="toolbar">
-          <BaseButton variant="secondary" :icon="Filter" @click="ui.pushToast({ type: 'info', title: 'Filterlar', text: 'Jadvaldagi advanced filters panelidan foydalaning.' })">Filterlar</BaseButton>
+          <BaseButton
+            variant="secondary"
+            :icon="Filter"
+            @click="
+              ui.pushToast({
+                type: 'info',
+                title: 'Filterlar',
+                text: 'Jadvaldagi advanced filters panelidan foydalaning.'
+              })
+            "
+            >Filterlar</BaseButton
+          >
           <BaseButton :icon="FileDown" @click="open = true">Eksport</BaseButton>
         </div>
       </div>
-      <DataTable :columns="['Vaqt', 'Foydalanuvchi', 'Rol', 'Harakat', 'Manba IP', 'Holati']" :rows="auditRows" />
+      <DataTable
+        :columns="['Vaqt', 'Foydalanuvchi', 'Rol', 'Harakat', 'Manba IP', 'Holati']"
+        :rows="auditRows"
+      />
       <section class="audit-timeline">
         <h2>Audit timeline</h2>
         <article v-for="item in auditTimeline" :key="item.time" :class="`tone-${item.tone}`">

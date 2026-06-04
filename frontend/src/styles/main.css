@@ -31,7 +31,13 @@
   --radius-full: 9999px;
   --ease-apple: cubic-bezier(0.4, 0, 0.2, 1);
   font-family:
-    Inter, -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', system-ui, sans-serif;
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    'SF Pro Display',
+    'SF Pro Text',
+    system-ui,
+    sans-serif;
   color: var(--gray-800);
   background: var(--color-white);
   font-synthesis: none;

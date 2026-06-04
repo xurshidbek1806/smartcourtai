@@ -83,8 +83,7 @@ svg {
   border-radius: var(--radius-lg);
   background:
     linear-gradient(var(--border-subtle) 1px, transparent 1px),
-    linear-gradient(90deg, var(--border-subtle) 1px, transparent 1px),
-    var(--gray-100);
+    linear-gradient(90deg, var(--border-subtle) 1px, transparent 1px), var(--gray-100);
   background-size: 22px 22px;
 }
 

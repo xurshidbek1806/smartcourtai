@@ -40,7 +40,12 @@ const page = computed(() => marketingPages[pageKey.value] ?? marketingPages.feat
     <section v-if="page.formFields?.length" class="panel cards">
       <h2>Ma’lumotlar</h2>
       <div class="grid grid-2 form">
-        <BaseInput v-for="field in page.formFields" :key="field" :label="field" :placeholder="field" />
+        <BaseInput
+          v-for="field in page.formFields"
+          :key="field"
+          :label="field"
+          :placeholder="field"
+        />
       </div>
     </section>
 

@@ -17,15 +17,39 @@ import {
 
 export const modules = [
   { name: 'JustiScribe', icon: Mic, text: 'Sud majlislarini real-time stenogramma qiladi.' },
-  { name: 'LexPredictor', icon: BrainCircuit, text: 'Pretsedentlar asosida natija ehtimolini baholaydi.' },
-  { name: 'SmartJudge', icon: Gavel, text: 'Qaror qoralamasini qonun moddalari bilan tayyorlaydi.' },
-  { name: 'EvidentAI', icon: FileSearch, text: 'Dalillarni tekshiradi va huquqiy faktlarni ajratadi.' },
+  {
+    name: 'LexPredictor',
+    icon: BrainCircuit,
+    text: 'Pretsedentlar asosida natija ehtimolini baholaydi.'
+  },
+  {
+    name: 'SmartJudge',
+    icon: Gavel,
+    text: 'Qaror qoralamasini qonun moddalari bilan tayyorlaydi.'
+  },
+  {
+    name: 'EvidentAI',
+    icon: FileSearch,
+    text: 'Dalillarni tekshiradi va huquqiy faktlarni ajratadi.'
+  },
   { name: 'MediatoBot', icon: Scale, text: 'Sudgacha kelishuv ehtimolini tahlil qiladi.' },
-  { name: 'AnonimusLaw', icon: Fingerprint, text: 'Shaxsiy ma’lumotlarni nashrdan oldin yashiradi.' },
+  {
+    name: 'AnonimusLaw',
+    icon: Fingerprint,
+    text: 'Shaxsiy ma’lumotlarni nashrdan oldin yashiradi.'
+  },
   { name: 'CorruptAlert', icon: Network, text: 'Aloqalar grafidan xavf signallarini topadi.' },
   { name: 'SentencAI', icon: FileCheck, text: 'Jazo proporsionalligini hisoblaydi.' },
-  { name: 'SecureCourt', icon: ShieldCheck, text: 'Audit, shifrlash va ruxsatlarni nazorat qiladi.' },
-  { name: 'AudioVault', icon: AudioLines, text: 'Yozuvlar, diarizatsiya va waveform arxivini yuritadi.' }
+  {
+    name: 'SecureCourt',
+    icon: ShieldCheck,
+    text: 'Audit, shifrlash va ruxsatlarni nazorat qiladi.'
+  },
+  {
+    name: 'AudioVault',
+    icon: AudioLines,
+    text: 'Yozuvlar, diarizatsiya va waveform arxivini yuritadi.'
+  }
 ];
 
 export const stats = [
@@ -68,7 +92,11 @@ export const claims = [
 export const hearings = [
   { time: '09:20', speaker: 'Sudya', text: 'Tomonlar shaxsini tasdiqladi.' },
   { time: '09:26', speaker: 'Da’vogar', text: 'Shartnoma 2025 yil 14 noyabrda imzolangan.' },
-  { time: '09:31', speaker: 'Javobgar', text: '50 000 000 so‘m miqdoridagi qarzni qisman tan oladi.' },
+  {
+    time: '09:31',
+    speaker: 'Javobgar',
+    text: '50 000 000 so‘m miqdoridagi qarzni qisman tan oladi.'
+  },
   { time: '09:38', speaker: 'AI', text: '167-modda va 985-modda bo‘yicha havolalar aniqlandi.' }
 ];
 
@@ -96,14 +124,44 @@ export const kpis = [
 ];
 
 export const modelCards = [
-  { name: 'Llama-3 Legal', version: '3.1-court', accuracy: '94.2%', status: 'Faol', requests: '18,240' },
-  { name: 'Whisper Court', version: 'large-v3', accuracy: '96.8%', status: 'Faol', requests: '7,913' },
-  { name: 'LexPredictor', version: '2026.02', accuracy: '88.5%', status: 'Faol', requests: '12,604' },
+  {
+    name: 'Llama-3 Legal',
+    version: '3.1-court',
+    accuracy: '94.2%',
+    status: 'Faol',
+    requests: '18,240'
+  },
+  {
+    name: 'Whisper Court',
+    version: 'large-v3',
+    accuracy: '96.8%',
+    status: 'Faol',
+    requests: '7,913'
+  },
+  {
+    name: 'LexPredictor',
+    version: '2026.02',
+    accuracy: '88.5%',
+    status: 'Faol',
+    requests: '12,604'
+  },
   { name: 'Deepfake Guard', version: '1.9', accuracy: '91.1%', status: 'Pauza', requests: '2,018' }
 ];
 
 export const trustItems = [
-  { title: 'On-Premise', text: 'Sud infratuzilmasida ishlaydi, data tashqi servisga chiqmaydi.', icon: Landmark },
-  { title: 'ISO 27001 ready', text: 'Audit, kirish nazorati va logging standartlari bilan.', icon: Lock },
-  { title: 'UzPrivacy', text: 'Anonimlashtirish va shaxsiy ma’lumotlarni minimallashtirish.', icon: Bot }
+  {
+    title: 'On-Premise',
+    text: 'Sud infratuzilmasida ishlaydi, data tashqi servisga chiqmaydi.',
+    icon: Landmark
+  },
+  {
+    title: 'ISO 27001 ready',
+    text: 'Audit, kirish nazorati va logging standartlari bilan.',
+    icon: Lock
+  },
+  {
+    title: 'UzPrivacy',
+    text: 'Anonimlashtirish va shaxsiy ma’lumotlarni minimallashtirish.',
+    icon: Bot
+  }
 ];

@@ -1,5 +1,12 @@
 <script setup>
-import { AlertTriangle, Archive, BarChart3, FileCheck, Network, ShieldAlert } from 'lucide-vue-next';
+import {
+  AlertTriangle,
+  Archive,
+  BarChart3,
+  FileCheck,
+  Network,
+  ShieldAlert
+} from 'lucide-vue-next';
 
 import RoleShell from '@/layouts/RoleShell.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
@@ -28,7 +35,11 @@ const riskSignals = [
 </script>
 
 <template>
-  <RoleShell title="Nazorat va ijro" subtitle="Qarorlar ijrosi va korrupsiya monitoringi" :nav="oversightNav">
+  <RoleShell
+    title="Nazorat va ijro"
+    subtitle="Qarorlar ijrosi va korrupsiya monitoringi"
+    :nav="oversightNav"
+  >
     <section class="dashboard">
       <header class="summary-panel">
         <div>
@@ -55,7 +66,11 @@ const riskSignals = [
                 <p class="eyebrow">Ijro navbati</p>
                 <h2>Integratsiyalar bo‘yicha holat</h2>
               </div>
-              <RouterLink to="/oversight/reports"><BaseButton variant="ghost" :icon="BarChart3" size="sm">Hisobotlar</BaseButton></RouterLink>
+              <RouterLink to="/oversight/reports"
+                ><BaseButton variant="ghost" :icon="BarChart3" size="sm"
+                  >Hisobotlar</BaseButton
+                ></RouterLink
+              >
             </div>
             <DataTable :columns="['Qaror', 'Holat', 'Integratsiya', 'Muddat']" :rows="rows" />
           </section>
@@ -84,7 +99,9 @@ const riskSignals = [
             <ShieldAlert :size="24" :stroke-width="1.5" />
             <h2>Xavf signali</h2>
             <p>Xavf darajasi: 84 / 100. Graph sahifasida tekshiring.</p>
-            <RouterLink to="/oversight/corruption/graph"><BaseButton variant="secondary" size="sm">Grafni ochish</BaseButton></RouterLink>
+            <RouterLink to="/oversight/corruption/graph"
+              ><BaseButton variant="secondary" size="sm">Grafni ochish</BaseButton></RouterLink
+            >
           </section>
 
           <section class="panel">
@@ -92,7 +109,9 @@ const riskSignals = [
               <h2>Risk tafsilotlari</h2>
               <AlertTriangle :size="19" :stroke-width="1.5" />
             </div>
-            <p v-for="signal in riskSignals" :key="signal" class="signal-row"><span class="status-dot danger" />{{ signal }}</p>
+            <p v-for="signal in riskSignals" :key="signal" class="signal-row">
+              <span class="status-dot danger" />{{ signal }}
+            </p>
           </section>
         </aside>
       </section>

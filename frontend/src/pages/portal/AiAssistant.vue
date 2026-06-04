@@ -33,11 +33,32 @@ const streamAnswer = () => {
   const aiMessage = { role: 'ai', text: '' };
   messages.value.push(aiMessage);
   const tokens = [
-    'Savolingiz ', 'qabul ', 'qilindi. ', 'Mehnat ', 'kodeksi ', 'va ',
-    'o‘xshash ', 'pretsedentlar ', 'asosida ', 'javob: ', 'avval ',
-    'ariza ', 'turini ', 'aniqlang, ', 'keyin ', 'davlat ', 'boji ',
-    'imtiyozlarini ', 'tekshiring. ', 'Zarur ', 'hujjatlar: ', 'shartnoma, ',
-    'buyruq ', 'va ', 'to‘lov ', 'dalillari.'
+    'Savolingiz ',
+    'qabul ',
+    'qilindi. ',
+    'Mehnat ',
+    'kodeksi ',
+    'va ',
+    'o‘xshash ',
+    'pretsedentlar ',
+    'asosida ',
+    'javob: ',
+    'avval ',
+    'ariza ',
+    'turini ',
+    'aniqlang, ',
+    'keyin ',
+    'davlat ',
+    'boji ',
+    'imtiyozlarini ',
+    'tekshiring. ',
+    'Zarur ',
+    'hujjatlar: ',
+    'shartnoma, ',
+    'buyruq ',
+    'va ',
+    'to‘lov ',
+    'dalillari.'
   ];
   let index = 0;
   const timer = window.setInterval(() => {
@@ -46,13 +67,21 @@ const streamAnswer = () => {
     if (index >= tokens.length) {
       window.clearInterval(timer);
       streaming.value = false;
-      ui.pushToast({ type: 'success', title: 'AI javob tayyor', text: 'Javob citationlar bilan yakunlandi.' });
+      ui.pushToast({
+        type: 'success',
+        title: 'AI javob tayyor',
+        text: 'Javob citationlar bilan yakunlandi.'
+      });
     }
   }, 75);
 };
 
 const copyMessage = () => {
-  ui.pushToast({ type: 'success', title: 'Nusxa olindi', text: 'AI javobi clipboard uchun tayyor.' });
+  ui.pushToast({
+    type: 'success',
+    title: 'Nusxa olindi',
+    text: 'AI javobi clipboard uchun tayyor.'
+  });
 };
 </script>
 
@@ -67,7 +96,11 @@ const copyMessage = () => {
       </aside>
       <main class="panel chat">
         <div class="messages">
-          <article v-for="(item, index) in messages" :key="`${item.role}-${index}`" :class="['bubble', item.role]">
+          <article
+            v-for="(item, index) in messages"
+            :key="`${item.role}-${index}`"
+            :class="['bubble', item.role]"
+          >
             <Sparkles v-if="item.role === 'ai'" :size="20" :stroke-width="1.5" />
             <div>
               <p>{{ item.text }}</p>
@@ -77,7 +110,9 @@ const copyMessage = () => {
               </div>
               <div v-if="item.role === 'ai'" class="message-actions">
                 <button type="button" @click="copyMessage"><Copy :size="15" />Copy</button>
-                <button type="button" @click="streamAnswer"><RefreshCcw :size="15" />Regenerate</button>
+                <button type="button" @click="streamAnswer">
+                  <RefreshCcw :size="15" />Regenerate
+                </button>
               </div>
             </div>
           </article>

@@ -39,8 +39,12 @@ const scoreTone = (score) => {
           <p>Arizalar, to‘lov va majlis sanalari nazoratda.</p>
         </div>
         <div class="summary-actions">
-          <RouterLink to="/portal/claims/new"><BaseButton :icon="Plus">Yangi ariza</BaseButton></RouterLink>
-          <RouterLink to="/portal/ai-assistant"><BaseButton variant="secondary" :icon="Sparkles">AI yordam</BaseButton></RouterLink>
+          <RouterLink to="/portal/claims/new"
+            ><BaseButton :icon="Plus">Yangi ariza</BaseButton></RouterLink
+          >
+          <RouterLink to="/portal/ai-assistant"
+            ><BaseButton variant="secondary" :icon="Sparkles">AI yordam</BaseButton></RouterLink
+          >
         </div>
       </header>
 
@@ -63,7 +67,13 @@ const scoreTone = (score) => {
               <BaseButton variant="ghost" :icon="Send" size="sm">Eksport</BaseButton>
             </div>
             <div class="claim-grid">
-              <BaseCard v-for="claim in claims" :key="claim.id" class="claim-card" :class="`tone-${scoreTone(claim.score)}`" interactive>
+              <BaseCard
+                v-for="claim in claims"
+                :key="claim.id"
+                class="claim-card"
+                :class="`tone-${scoreTone(claim.score)}`"
+                interactive
+              >
                 <div class="card-top">
                   <BaseBadge variant="outline">{{ claim.status }}</BaseBadge>
                   <strong>{{ claim.score }}%</strong>
@@ -79,7 +89,9 @@ const scoreTone = (score) => {
           <section class="panel">
             <div class="panel-header">
               <h2>Kutilayotgan ishlar</h2>
-              <RouterLink to="/portal/claims"><BaseButton variant="ghost" size="sm">Hammasi</BaseButton></RouterLink>
+              <RouterLink to="/portal/claims"
+                ><BaseButton variant="ghost" size="sm">Hammasi</BaseButton></RouterLink
+              >
             </div>
             <DataTable
               :columns="['Ariza', 'Holat', 'Sudya', 'Keyingi sana']"
@@ -93,7 +105,11 @@ const scoreTone = (score) => {
             <Sparkles :size="22" :stroke-width="1.5" />
             <h2>AI tavsiyasi</h2>
             <p>1 ta ariza mediatsiya orqali tezroq hal bo‘lishi mumkin.</p>
-            <RouterLink to="/portal/mediation"><BaseButton variant="secondary" size="sm" :icon="Scale">Mediatsiya</BaseButton></RouterLink>
+            <RouterLink to="/portal/mediation"
+              ><BaseButton variant="secondary" size="sm" :icon="Scale"
+                >Mediatsiya</BaseButton
+              ></RouterLink
+            >
           </section>
 
           <section class="panel">

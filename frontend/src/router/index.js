@@ -37,10 +37,10 @@ const marketingPages = [
   'careers'
 ].map((name) => ({ path: `/${name}`, name, component: MarketingPage }));
 
-const marketingDetailPages = [
-  '/blog/:slug',
-  '/case-studies/:slug'
-].map((path) => ({ path, component: MarketingPage }));
+const marketingDetailPages = ['/blog/:slug', '/case-studies/:slug'].map((path) => ({
+  path,
+  component: MarketingPage
+}));
 
 const authRoutes = [
   '/login',

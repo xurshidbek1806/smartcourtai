@@ -10,18 +10,40 @@ import { useUi } from '@/stores/ui';
 
 const ui = useUi();
 const streaming = ref(false);
-const draft = ref('Sud ish materiallarini o‘rganib, taraflar o‘rtasidagi mehnat shartnomasi 2025 yil 14 noyabrda tuzilganligi aniqlandi. Da’vogar talabining bir qismi asosli deb topiladi...');
+const draft = ref(
+  'Sud ish materiallarini o‘rganib, taraflar o‘rtasidagi mehnat shartnomasi 2025 yil 14 noyabrda tuzilganligi aniqlandi. Da’vogar talabining bir qismi asosli deb topiladi...'
+);
 
 const streamDraft = () => {
   if (streaming.value) return;
   streaming.value = true;
   draft.value = '';
   const tokens = [
-    'Sud ', 'ish ', 'materiallarini ', 'o‘rganib, ', 'taraflar ', 'o‘rtasidagi ',
-    'mehnat ', 'shartnomasi ', 'mavjudligi ', 'va ', 'kompensatsiya ',
-    'talabi ', 'qisman ', 'asosli ', 'ekani ', 'aniqlandi. ',
-    'Qaror ', 'qoralamasi ', 'Mehnat ', 'kodeksi ', '161-167 ',
-    'moddalariga ', 'tayangan ', 'holda ', 'shakllantirildi.'
+    'Sud ',
+    'ish ',
+    'materiallarini ',
+    'o‘rganib, ',
+    'taraflar ',
+    'o‘rtasidagi ',
+    'mehnat ',
+    'shartnomasi ',
+    'mavjudligi ',
+    'va ',
+    'kompensatsiya ',
+    'talabi ',
+    'qisman ',
+    'asosli ',
+    'ekani ',
+    'aniqlandi. ',
+    'Qaror ',
+    'qoralamasi ',
+    'Mehnat ',
+    'kodeksi ',
+    '161-167 ',
+    'moddalariga ',
+    'tayangan ',
+    'holda ',
+    'shakllantirildi.'
   ];
   let index = 0;
   const timer = window.setInterval(() => {
@@ -30,13 +52,21 @@ const streamDraft = () => {
     if (index >= tokens.length) {
       window.clearInterval(timer);
       streaming.value = false;
-      ui.pushToast({ type: 'success', title: 'Qoralama tayyor', text: 'SmartJudge draft yaratishni yakunladi.' });
+      ui.pushToast({
+        type: 'success',
+        title: 'Qoralama tayyor',
+        text: 'SmartJudge draft yaratishni yakunladi.'
+      });
     }
   }, 90);
 };
 
 const exportDraft = () => {
-  ui.pushToast({ type: 'success', title: 'Eksport tayyor', text: 'DOCX/PDF qoralama tayyorlandi.' });
+  ui.pushToast({
+    type: 'success',
+    title: 'Eksport tayyor',
+    text: 'DOCX/PDF qoralama tayyorlandi.'
+  });
 };
 </script>
 

@@ -37,10 +37,23 @@ const submitLogin = () => {
         <span>SmartCourt AI</span>
       </RouterLink>
       <p class="eyebrow">{{ route.path.includes('register') ? 'Ro‘yxatdan o‘tish' : 'Kirish' }}</p>
-      <h1>{{ route.path.includes('portal') ? 'OneID orqali tasdiqlash' : 'Xavfsiz tizimga kirish' }}</h1>
+      <h1>
+        {{ route.path.includes('portal') ? 'OneID orqali tasdiqlash' : 'Xavfsiz tizimga kirish' }}
+      </h1>
       <form class="auth-form" @submit.prevent="submitLogin">
-        <BaseInput v-model="pinfl" label="PINFL / Login" placeholder="12345678901234" :icon="Fingerprint" />
-        <BaseInput v-model="password" label="Parol" type="password" placeholder="••••••••" :icon="KeyRound" />
+        <BaseInput
+          v-model="pinfl"
+          label="PINFL / Login"
+          placeholder="12345678901234"
+          :icon="Fingerprint"
+        />
+        <BaseInput
+          v-model="password"
+          label="Parol"
+          type="password"
+          placeholder="••••••••"
+          :icon="KeyRound"
+        />
         <button class="submit" type="submit">Davom etish</button>
       </form>
       <div class="role-links" aria-label="Rol bo‘yicha kirish">
@@ -49,7 +62,9 @@ const submitLogin = () => {
         <RouterLink to="/admin/login">Admin</RouterLink>
         <RouterLink to="/oversight/login">Nazorat</RouterLink>
       </div>
-      <p class="secure"><ShieldCheck :size="17" :stroke-width="1.5" /> Role-based dashboardga yo‘naltiradi</p>
+      <p class="secure">
+        <ShieldCheck :size="17" :stroke-width="1.5" /> Role-based dashboardga yo‘naltiradi
+      </p>
       <RouterLink class="muted" to="/portal/forgot-password">Parolni tiklash</RouterLink>
     </section>
   </main>

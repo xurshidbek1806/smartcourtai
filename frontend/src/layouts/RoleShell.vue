@@ -80,7 +80,12 @@ const breadcrumbs = computed(() => {
 
 const notifications = [
   { icon: Mail, title: 'Yangi xabar', text: 'Sudya qo‘shimcha dalil so‘radi.', tone: 'info' },
-  { icon: CalendarDays, title: 'Majlis sanasi', text: '22.02.2026, 10:00 - Toshkent shahar sudi.', tone: 'success' },
+  {
+    icon: CalendarDays,
+    title: 'Majlis sanasi',
+    text: '22.02.2026, 10:00 - Toshkent shahar sudi.',
+    tone: 'success'
+  },
   { icon: Sparkles, title: 'AI signal', text: 'LexPredictor: yutish ehtimoli 73%.', tone: 'info' },
   { icon: CreditCard, title: 'To‘lov holati', text: 'Davlat boji tasdiqlandi.', tone: 'success' }
 ];
@@ -94,7 +99,11 @@ const tourSteps = [
 
 const setLanguage = (lang) => {
   locale.value = lang;
-  ui.pushToast({ type: 'success', title: 'Til almashtirildi', text: `${lang.toUpperCase()} rejimi yoqildi.` });
+  ui.pushToast({
+    type: 'success',
+    title: 'Til almashtirildi',
+    text: `${lang.toUpperCase()} rejimi yoqildi.`
+  });
 };
 
 const toggleTheme = () => {
@@ -154,14 +163,26 @@ const finishTour = () => {
           <button
             aria-label="Qidirish"
             type="button"
-            @click="ui.pushToast({ type: 'info', title: 'Qidiruv', text: 'Global qidiruv oynasi tayyorlanmoqda.' })"
+            @click="
+              ui.pushToast({
+                type: 'info',
+                title: 'Qidiruv',
+                text: 'Global qidiruv oynasi tayyorlanmoqda.'
+              })
+            "
           >
             <Search :size="18" :stroke-width="1.5" />
           </button>
           <button
             aria-label="Command palette"
             type="button"
-            @click="ui.pushToast({ type: 'info', title: 'Command palette', text: 'Tezkor komandalar paneli ochiladi.' })"
+            @click="
+              ui.pushToast({
+                type: 'info',
+                title: 'Command palette',
+                text: 'Tezkor komandalar paneli ochiladi.'
+              })
+            "
           >
             <Command :size="18" :stroke-width="1.5" />
           </button>
@@ -182,7 +203,11 @@ const finishTour = () => {
                 <small>4 ta yangi signal</small>
               </header>
               <div class="notification-list">
-                <article v-for="item in notifications" :key="item.title" :class="`tone-${item.tone}`">
+                <article
+                  v-for="item in notifications"
+                  :key="item.title"
+                  :class="`tone-${item.tone}`"
+                >
                   <component :is="item.icon" :size="18" :stroke-width="1.5" />
                   <div>
                     <h3>{{ item.title }}</h3>
@@ -201,12 +226,34 @@ const finishTour = () => {
               <RouterLink to="/settings/account"><Settings :size="16" />Sozlamalar</RouterLink>
               <div class="language-row">
                 <Globe2 :size="16" />
-                <button type="button" :class="{ active: locale === 'uz' }" @click="setLanguage('uz')">UZ</button>
-                <button type="button" :class="{ active: locale === 'ru' }" @click="setLanguage('ru')">RU</button>
-                <button type="button" :class="{ active: locale === 'en' }" @click="setLanguage('en')">EN</button>
+                <button
+                  type="button"
+                  :class="{ active: locale === 'uz' }"
+                  @click="setLanguage('uz')"
+                >
+                  UZ
+                </button>
+                <button
+                  type="button"
+                  :class="{ active: locale === 'ru' }"
+                  @click="setLanguage('ru')"
+                >
+                  RU
+                </button>
+                <button
+                  type="button"
+                  :class="{ active: locale === 'en' }"
+                  @click="setLanguage('en')"
+                >
+                  EN
+                </button>
               </div>
-              <button type="button" class="dropdown-button" @click="toggleTheme"><Moon :size="16" />Dark mode</button>
-              <button type="button" class="dropdown-button" @click="logout"><LogOut :size="16" />Chiqish</button>
+              <button type="button" class="dropdown-button" @click="toggleTheme">
+                <Moon :size="16" />Dark mode
+              </button>
+              <button type="button" class="dropdown-button" @click="logout">
+                <LogOut :size="16" />Chiqish
+              </button>
             </section>
           </div>
         </div>
@@ -227,7 +274,11 @@ const finishTour = () => {
         <h2>{{ tourSteps[tourStep].title }}</h2>
         <p class="muted">{{ tourSteps[tourStep].text }}</p>
         <div class="tour-dots">
-          <span v-for="(_, index) in tourSteps" :key="index" :class="{ active: index === tourStep }" />
+          <span
+            v-for="(_, index) in tourSteps"
+            :key="index"
+            :class="{ active: index === tourStep }"
+          />
         </div>
         <div class="toolbar">
           <button type="button" class="text-button" @click="finishTour">O‘tkazib yuborish</button>

@@ -8,5 +8,7 @@ test('landing and core dashboards render', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Arizani sudga yuborish' })).toBeVisible();
 
   await page.goto('/oversight/corruption/graph');
-  await expect(page.getByRole('img', { name: 'Korrupsiya monitoring aloqalar grafi' })).toBeVisible();
+  await expect(
+    page.getByRole('img', { name: 'Korrupsiya monitoring aloqalar grafi' })
+  ).toBeVisible();
 });

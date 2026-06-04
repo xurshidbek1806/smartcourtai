@@ -1,5 +1,14 @@
 <script setup>
-import { CalendarDays, FileSearch, FileText, Gavel, Mic, PenLine, Play, Sparkles } from 'lucide-vue-next';
+import {
+  CalendarDays,
+  FileSearch,
+  FileText,
+  Gavel,
+  Mic,
+  PenLine,
+  Play,
+  Sparkles
+} from 'lucide-vue-next';
 
 import RoleShell from '@/layouts/RoleShell.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
@@ -39,7 +48,9 @@ const schedule = [
           <h1>12 ta ish navbatda</h1>
           <p>Majlislar, AI qoralamalar va aktiv ishlar nazoratda.</p>
         </div>
-        <RouterLink to="/judge/hearing/live"><BaseButton :icon="Play">Jonli majlis</BaseButton></RouterLink>
+        <RouterLink to="/judge/hearing/live"
+          ><BaseButton :icon="Play">Jonli majlis</BaseButton></RouterLink
+        >
       </header>
 
       <section class="metrics">
@@ -65,7 +76,9 @@ const schedule = [
                 <p class="eyebrow">Ustuvor ishlar</p>
                 <h2>LexPredictor bo‘yicha</h2>
               </div>
-              <RouterLink to="/judge/cases"><BaseButton variant="ghost" size="sm">Ishlar</BaseButton></RouterLink>
+              <RouterLink to="/judge/cases"
+                ><BaseButton variant="ghost" size="sm">Ishlar</BaseButton></RouterLink
+              >
             </div>
             <div class="case-grid">
               <BaseCard v-for="claim in claims" :key="claim.id" class="case-card" interactive>
@@ -91,7 +104,9 @@ const schedule = [
             <Sparkles :size="22" :stroke-width="1.5" />
             <h2>AI Copilot</h2>
             <p>2 ta qaror qoralamasi tayyor. 1 ta ishda dalillar bo‘yicha signal bor.</p>
-            <RouterLink to="/judge/ai-tools/smart-judge"><BaseButton variant="secondary" size="sm">Qoralamalar</BaseButton></RouterLink>
+            <RouterLink to="/judge/ai-tools/smart-judge"
+              ><BaseButton variant="secondary" size="sm">Qoralamalar</BaseButton></RouterLink
+            >
           </section>
 
           <section class="panel">

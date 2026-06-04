@@ -25,7 +25,13 @@ const step = ref(1);
 const selectedType = ref('Mehnat nizosi');
 const partyType = ref('Jismoniy shaxs');
 const uploadedFiles = ref([
-  { id: 1, name: 'shartnoma.pdf', size: '2.4 MB', progress: 100, result: 'AI: 3 ta huquqiy fakt aniqlandi.' }
+  {
+    id: 1,
+    name: 'shartnoma.pdf',
+    size: '2.4 MB',
+    progress: 100,
+    result: 'AI: 3 ta huquqiy fakt aniqlandi.'
+  }
 ]);
 
 const disputeTypes = [
@@ -41,7 +47,11 @@ const progress = computed(() => `${(step.value / 5) * 100}%`);
 const next = () => (step.value = Math.min(5, step.value + 1));
 const prev = () => (step.value = Math.max(1, step.value - 1));
 const saveDraft = () => {
-  ui.pushToast({ type: 'success', title: 'Qoralama saqlandi', text: 'Ariza qoralamasi lokal saqlandi.' });
+  ui.pushToast({
+    type: 'success',
+    title: 'Qoralama saqlandi',
+    text: 'Ariza qoralamasi lokal saqlandi.'
+  });
 };
 const addMockFile = () => {
   const id = Date.now();
@@ -65,7 +75,11 @@ const removeFile = (id) => {
 };
 const handleNext = () => {
   if (step.value === 5) {
-    ui.pushToast({ type: 'success', title: 'Ariza yuborildi', text: 'Sud tizimiga #2026-001234 raqami bilan qabul qilindi.' });
+    ui.pushToast({
+      type: 'success',
+      title: 'Ariza yuborildi',
+      text: 'Sud tizimiga #2026-001234 raqami bilan qabul qilindi.'
+    });
     return;
   }
   next();
@@ -121,10 +135,16 @@ const handleNext = () => {
           <template v-else-if="step === 2">
             <h2>2. Tomonlar</h2>
             <div class="toolbar">
-              <BaseButton :variant="partyType === 'Jismoniy shaxs' ? 'primary' : 'secondary'" @click="partyType = 'Jismoniy shaxs'">
+              <BaseButton
+                :variant="partyType === 'Jismoniy shaxs' ? 'primary' : 'secondary'"
+                @click="partyType = 'Jismoniy shaxs'"
+              >
                 Jismoniy shaxs
               </BaseButton>
-              <BaseButton :variant="partyType === 'Yuridik shaxs' ? 'primary' : 'secondary'" @click="partyType = 'Yuridik shaxs'">
+              <BaseButton
+                :variant="partyType === 'Yuridik shaxs' ? 'primary' : 'secondary'"
+                @click="partyType = 'Yuridik shaxs'"
+              >
                 Yuridik shaxs
               </BaseButton>
             </div>
@@ -168,7 +188,12 @@ const handleNext = () => {
               <p>PDF, JPG, PNG, MP3, MP4, DOCX • 50 MB gacha</p>
             </div>
             <div class="file-list">
-              <BaseCard v-for="file in uploadedFiles" :key="file.id" variant="filled" class="file-preview">
+              <BaseCard
+                v-for="file in uploadedFiles"
+                :key="file.id"
+                variant="filled"
+                class="file-preview"
+              >
                 <FileText :size="22" :stroke-width="1.5" />
                 <div>
                   <strong>{{ file.name }}</strong>
@@ -199,7 +224,9 @@ const handleNext = () => {
 
           <footer class="wizard-actions">
             <BaseButton variant="secondary" :disabled="step === 1" @click="prev">Orqaga</BaseButton>
-            <BaseButton @click="handleNext">{{ step === 5 ? 'Yuborish' : 'Davom etish' }}</BaseButton>
+            <BaseButton @click="handleNext">{{
+              step === 5 ? 'Yuborish' : 'Davom etish'
+            }}</BaseButton>
           </footer>
         </main>
 
