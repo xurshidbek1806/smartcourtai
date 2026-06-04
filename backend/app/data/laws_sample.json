@@ -1,0 +1,114 @@
+[
+  {
+    "code": "FK",
+    "article": "234",
+    "title": "Mulkdorlik huquqini himoya qilish (vindikatsiya da'vosi)",
+    "text": "Mulkdor o'z mol-mulkini birovning qonunsiz egaligidan talab qilib olishga haqli. Mol-mulk vijdonan egallab oluvchidan haq evaziga olingan hollarda, mulkdor mol-mulkni mulkdordan yo'qolgan yoki o'g'irlangan bo'lsagina talab qilib olishi mumkin.",
+    "dispute_type": "property"
+  },
+  {
+    "code": "FK",
+    "article": "324",
+    "title": "Majburiyatlarni lozim darajada bajarish",
+    "text": "Majburiyatlar majburiyat shartlariga, qonun hujjatlari talablariga muvofiq, bunday shartlar va talablar bo'lmaganda esa ish muomalasi odatlariga yoki odatda qo'yiladigan boshqa talablarga muvofiq lozim darajada bajarilishi kerak.",
+    "dispute_type": "civil"
+  },
+  {
+    "code": "FK",
+    "article": "333",
+    "title": "Shartnomani bir tomonlama bajarishdan bosh tortish",
+    "text": "Majburiyatni bir tomonlama bajarishdan bosh tortishga va uning shartlarini bir tomonlama o'zgartirishga, qonun hujjatlarida nazarda tutilgan hollar bundan mustasno, yo'l qo'yilmaydi.",
+    "dispute_type": "economic"
+  },
+  {
+    "code": "FK",
+    "article": "14",
+    "title": "Yetkazilgan zararning o'rnini qoplash",
+    "text": "Huquqi buzilgan shaxs, agar qonun hujjatlarida yoki shartnomada zararning o'rnini qoplash boshqacha hajmda nazarda tutilgan bo'lmasa, o'ziga yetkazilgan zararning o'rni to'liq qoplanishini talab qilishi mumkin. Zarar deganda huquqi buzilgan shaxsning sarflagan yoki sarflashi lozim bo'lgan xarajatlari, mol-mulkidan mahrum bo'lishi yoki shikastlanishi (real zarar) tushuniladi.",
+    "dispute_type": "civil"
+  },
+  {
+    "code": "MK",
+    "article": "173",
+    "title": "Mehnat shartnomasini bekor qilish asoslari",
+    "text": "Mehnat shartnomasi tomonlarning kelishuvi, mehnat shartnomasi muddatining tugashi, xodimning tashabbusi, ish beruvchining tashabbusi va tomonlarning ixtiyoriga bog'liq bo'lmagan holatlar yuzaga kelganda bekor qilinishi mumkin.",
+    "dispute_type": "labor"
+  },
+  {
+    "code": "MK",
+    "article": "180",
+    "title": "Ish beruvchi tashabbusi bilan mehnat shartnomasini bekor qilish",
+    "text": "Ish beruvchi tashabbusi bilan mehnat shartnomasi tashkilot tugatilganda, xodimlar soni yoki shtati qisqartirilganda, xodim egallab turgan lavozimiga muvofiq kelmaganda bekor qilinishi mumkin. Xodim asossiz ravishda ishdan bo'shatilgan bo'lsa, u avvalgi ishiga tiklanadi.",
+    "dispute_type": "labor"
+  },
+  {
+    "code": "MK",
+    "article": "186",
+    "title": "Ishga noqonuniy bo'shatilgan xodimni ishga tiklash",
+    "text": "Noqonuniy ravishda ishdan bo'shatilgan yoki boshqa ishga o'tkazilgan xodim avvalgi ishiga tiklanishi lozim. Bunday xodimga majburiy ishda yurmagan davr uchun o'rtacha ish haqi to'lanadi.",
+    "dispute_type": "labor"
+  },
+  {
+    "code": "OK",
+    "article": "55",
+    "title": "Er-xotinning umumiy mol-mulkini bo'lish",
+    "text": "Er-xotinning umumiy mol-mulki ular nikohda turgan davrda yoki nikoh bekor qilingandan keyin bo'linishi mumkin. Mol-mulkni bo'lishda er va xotinning ulushlari teng deb hisoblanadi, agar er-xotin o'rtasidagi shartnomada boshqacha tartib nazarda tutilmagan bo'lsa.",
+    "dispute_type": "family"
+  },
+  {
+    "code": "OK",
+    "article": "96",
+    "title": "Aliment (nafaqa) miqdori",
+    "text": "Voyaga yetmagan farzandlar uchun aliment ota-onaning daromadidan quyidagi miqdorda undiriladi: bitta farzandga — to'rtdan bir, ikki farzandga — uchdan bir, uch va undan ortiq farzandga — daromadning yarmi.",
+    "dispute_type": "family"
+  },
+  {
+    "code": "JK",
+    "article": "97",
+    "title": "Qasddan odam o'ldirish",
+    "text": "Qasddan odam o'ldirish, ya'ni boshqa shaxsning hayotidan qasddan mahrum qilish — o'n yildan o'n besh yilgacha ozodlikdan mahrum qilish bilan jazolanadi.",
+    "dispute_type": "criminal"
+  },
+  {
+    "code": "JK",
+    "article": "168",
+    "title": "Firibgarlik",
+    "text": "Firibgarlik, ya'ni aldash yoki ishonchni suiiste'mol qilish yo'li bilan o'zganing mol-mulkini yoki mol-mulkka bo'lgan huquqni egallash — jarima yoki uch yilgacha ozodlikdan mahrum qilish bilan jazolanadi. Ko'p miqdorda sodir etilgan bo'lsa, jazo og'irlashadi.",
+    "dispute_type": "criminal"
+  },
+  {
+    "code": "JK",
+    "article": "55",
+    "title": "Jazoni yengillashtiruvchi holatlar",
+    "text": "Chin ko'ngildan pushaymon bo'lish, aybiga iqror bo'lish, jinoyat oqibatlariga ko'maklashish, yetkazilgan zararni qoplash, jabrlanuvchi bilan yarashish jazoni yengillashtiruvchi holatlar hisoblanadi.",
+    "dispute_type": "criminal"
+  },
+  {
+    "code": "JK",
+    "article": "56",
+    "title": "Jazoni og'irlashtiruvchi holatlar",
+    "text": "Jinoyatni qayta sodir etish, jinoyatni bir guruh shaxslar tomonidan sodir etish, jabrlanuvchining nochor ahvolidan foydalanish, jinoyatni alohida qabihlik bilan sodir etish jazoni og'irlashtiruvchi holatlar hisoblanadi.",
+    "dispute_type": "criminal"
+  },
+  {
+    "code": "MJK",
+    "article": "128",
+    "title": "Mehnat to'g'risidagi qonun hujjatlarini buzish",
+    "text": "Mehnat to'g'risidagi qonun hujjatlarini buzish — bazaviy hisoblash miqdorining bir baravaridan uch baravarigacha miqdorda jarima solishga sabab bo'ladi.",
+    "dispute_type": "administrative"
+  },
+  {
+    "code": "FPK",
+    "article": "151",
+    "title": "Da'voni ta'minlash choralari",
+    "text": "Sud yoki sudya ishda ishtirok etuvchi shaxslarning arizasiga binoan da'voni ta'minlash choralarini ko'rishi mumkin. Da'voni ta'minlash chorasi sifatida javobgarga tegishli mol-mulkka hibs qo'yish, javobgarga muayyan harakatlarni amalga oshirishni taqiqlash qo'llanilishi mumkin.",
+    "dispute_type": "civil"
+  },
+  {
+    "code": "IPK",
+    "article": "9",
+    "title": "Iqtisodiy sudlarda nizolarni hal qilish",
+    "text": "Iqtisodiy sud tadbirkorlik va boshqa iqtisodiy faoliyatni amalga oshirish bilan bog'liq nizolarni, shu jumladan shartnomalardan kelib chiqadigan nizolarni, mol-mulkni undirish to'g'risidagi nizolarni ko'rib chiqadi.",
+    "dispute_type": "economic"
+  }
+]
