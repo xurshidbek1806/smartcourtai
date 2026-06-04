@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import {
   Building2,
   Calendar,
@@ -7,8 +7,10 @@ import {
   FileText,
   Home,
   Landmark,
+  Loader2,
   Plus,
   Scale,
+  Sparkles,
   Trash2,
   Upload
 } from 'lucide-vue-next';
@@ -19,11 +21,24 @@ import BaseCard from '@/components/ui/BaseCard.vue';
 import BaseInput from '@/components/ui/BaseInput.vue';
 import { portalNav } from '@/data/navigation';
 import { useUi } from '@/stores/ui';
+import { validateClaim } from '@/lib/api';
 
 const ui = useUi();
 const step = ref(1);
-const selectedType = ref('Mehnat nizosi');
-const partyType = ref('Jismoniy shaxs');
+
+const form = reactive({
+  selectedType: 'Mehnat nizosi',
+  partyType: 'Jismoniy shaxs',
+  fullName: '',
+  pinfl: '',
+  address: '',
+  phone: '',
+  title: '',
+  description: '',
+  amount: '',
+  eventDate: ''
+});
+
 const uploadedFiles = ref([
   {
     id: 1,
@@ -33,6 +48,12 @@ const uploadedFiles = ref([
     result: 'AI: 3 ta huquqiy fakt aniqlandi.'
   }
 ]);
+
+const validation = reactive({
+  loading: false,
+  error: null,
+  data: null
+});
 
 const disputeTypes = [
   { title: 'Fuqarolik nizosi', icon: Home, text: 'Shaxsiy va mulkiy munosabatlar.' },
@@ -46,6 +67,7 @@ const steps = ['Nizo turi', 'Tomonlar', 'Tafsilotlar', 'Dalillar', 'Yuborish'];
 const progress = computed(() => `${(step.value / 5) * 100}%`);
 const next = () => (step.value = Math.min(5, step.value + 1));
 const prev = () => (step.value = Math.max(1, step.value - 1));
+
 const saveDraft = () => {
   ui.pushToast({
     type: 'success',
@@ -53,6 +75,7 @@ const saveDraft = () => {
     text: 'Ariza qoralamasi lokal saqlandi.'
   });
 };
+
 const addMockFile = () => {
   const id = Date.now();
   uploadedFiles.value.push({
@@ -70,9 +93,62 @@ const addMockFile = () => {
     }
   }, 700);
 };
+
 const removeFile = (id) => {
   uploadedFiles.value = uploadedFiles.value.filter((file) => file.id !== id);
 };
+
+/**
+ * Build the free-text claim from the wizard state and send it to the
+ * backend ClaimValidator. The AI returns structured JSON with the dispute
+ * type, jurisdiction, missing fields, summary, and recommendations.
+ */
+const runClaimValidator = async () => {
+  const textParts = [
+    `Nizo turi: ${form.selectedType}`,
+    form.title && `Sarlavha: ${form.title}`,
+    form.fullName && `Javobgar: ${form.fullName}`,
+    form.address && `Manzil: ${form.address}`,
+    form.amount && `Nizo summasi: ${form.amount}`,
+    form.eventDate && `Voqea sanasi: ${form.eventDate}`,
+    form.description && `\nMohiyati: ${form.description}`
+  ].filter(Boolean);
+  const fullText = textParts.join('\n');
+
+  if (fullText.trim().length < 20) {
+    ui.pushToast({
+      type: 'error',
+      title: 'Matn juda qisqa',
+      text: 'AI tahlili uchun kamida 20 belgi kiriting.'
+    });
+    return;
+  }
+
+  validation.loading = true;
+  validation.error = null;
+  validation.data = null;
+  try {
+    const result = await validateClaim(fullText);
+    validation.data = result;
+    ui.pushToast({
+      type: 'success',
+      title: 'AI tahlil tayyor',
+      text: result.summary?.slice(0, 80) || 'ClaimValidator natija qaytardi.'
+    });
+  } catch (e) {
+    validation.error = e.message;
+    ui.pushToast({
+      type: 'error',
+      title: 'AI tahlil xatosi',
+      text: 'Backend bilan bog‘lanib bo‘lmadi. Konsolga qarang.'
+    });
+    // eslint-disable-next-line no-console
+    console.error('ClaimValidator error:', e);
+  } finally {
+    validation.loading = false;
+  }
+};
+
 const handleNext = () => {
   if (step.value === 5) {
     ui.pushToast({
@@ -121,13 +197,13 @@ const handleNext = () => {
                 v-for="type in disputeTypes"
                 :key="type.title"
                 interactive
-                :class="{ selected: selectedType === type.title }"
-                @click="selectedType = type.title"
+                :class="{ selected: form.selectedType === type.title }"
+                @click="form.selectedType = type.title"
               >
                 <component :is="type.icon" :size="26" :stroke-width="1.5" />
                 <h3>{{ type.title }}</h3>
                 <p>{{ type.text }}</p>
-                <Check v-if="selectedType === type.title" class="check" :size="20" />
+                <Check v-if="form.selectedType === type.title" class="check" :size="20" />
               </BaseCard>
             </div>
           </template>
@@ -136,23 +212,27 @@ const handleNext = () => {
             <h2>2. Tomonlar</h2>
             <div class="toolbar">
               <BaseButton
-                :variant="partyType === 'Jismoniy shaxs' ? 'primary' : 'secondary'"
-                @click="partyType = 'Jismoniy shaxs'"
+                :variant="form.partyType === 'Jismoniy shaxs' ? 'primary' : 'secondary'"
+                @click="form.partyType = 'Jismoniy shaxs'"
               >
                 Jismoniy shaxs
               </BaseButton>
               <BaseButton
-                :variant="partyType === 'Yuridik shaxs' ? 'primary' : 'secondary'"
-                @click="partyType = 'Yuridik shaxs'"
+                :variant="form.partyType === 'Yuridik shaxs' ? 'primary' : 'secondary'"
+                @click="form.partyType = 'Yuridik shaxs'"
               >
                 Yuridik shaxs
               </BaseButton>
             </div>
             <div class="grid grid-2 form-grid">
-              <BaseInput label="F.I.Sh / tashkilot" placeholder="Akramov Dilshod" />
-              <BaseInput label="PINFL / INN" placeholder="12345678901234" />
-              <BaseInput label="Manzil" placeholder="Toshkent, Yunusobod" />
-              <BaseInput label="Telefon" placeholder="+998 90 000 00 00" />
+              <BaseInput
+                v-model="form.fullName"
+                label="F.I.Sh / tashkilot"
+                placeholder="Akramov Dilshod"
+              />
+              <BaseInput v-model="form.pinfl" label="PINFL / INN" placeholder="12345678901234" />
+              <BaseInput v-model="form.address" label="Manzil" placeholder="Toshkent, Yunusobod" />
+              <BaseInput v-model="form.phone" label="Telefon" placeholder="+998 90 000 00 00" />
             </div>
             <BaseButton variant="secondary" :icon="Plus">Yana tomon qo‘shish</BaseButton>
           </template>
@@ -160,15 +240,82 @@ const handleNext = () => {
           <template v-else-if="step === 3">
             <h2>3. Nizo tafsilotlari</h2>
             <div class="grid form-grid">
-              <BaseInput label="Sarlavha" placeholder="Mehnat kompensatsiyasi bo‘yicha da’vo" />
+              <BaseInput
+                v-model="form.title"
+                label="Sarlavha"
+                placeholder="Mehnat kompensatsiyasi bo‘yicha da’vo"
+              />
               <label class="textarea">
                 <span>Nizo mohiyati</span>
-                <textarea rows="7" placeholder="Kamida 200 belgi..." />
+                <textarea
+                  v-model="form.description"
+                  rows="7"
+                  placeholder="Kamida 200 belgi..."
+                />
               </label>
               <div class="grid grid-2">
-                <BaseInput label="Nizo summasi" placeholder="50 000 000" />
-                <BaseInput label="Voqea sanasi" placeholder="15.01.2026" :icon="Calendar" />
+                <BaseInput
+                  v-model="form.amount"
+                  label="Nizo summasi"
+                  placeholder="50 000 000"
+                />
+                <BaseInput
+                  v-model="form.eventDate"
+                  label="Voqea sanasi"
+                  placeholder="15.01.2026"
+                  :icon="Calendar"
+                />
               </div>
+              <BaseButton :icon="Sparkles" :loading="validation.loading" @click="runClaimValidator">
+                {{ validation.loading ? 'AI tahlil qilmoqda...' : 'AI bilan tekshirish (ClaimValidator)' }}
+              </BaseButton>
+
+              <BaseCard v-if="validation.data" variant="filled" class="ai-result">
+                <p class="eyebrow">AI: ClaimValidator natijasi</p>
+                <h3 v-if="validation.data.summary">{{ validation.data.summary }}</h3>
+
+                <div v-if="validation.data.dispute_type" class="ai-row">
+                  <span>Nizo turi</span>
+                  <strong>{{ validation.data.dispute_type }}</strong>
+                </div>
+                <div v-if="validation.data.jurisdiction" class="ai-row">
+                  <span>Yurisdiksiya</span>
+                  <strong>{{ validation.data.jurisdiction }}</strong>
+                </div>
+                <div v-if="validation.data.amount !== undefined && validation.data.amount !== null" class="ai-row">
+                  <span>Summa</span>
+                  <strong>{{ validation.data.amount }} {{ validation.data.currency || 'UZS' }}</strong>
+                </div>
+
+                <div v-if="validation.data.relevant_articles?.length" class="ai-block">
+                  <p class="muted">Tegishli qonun moddalari</p>
+                  <ul>
+                    <li v-for="(article, i) in validation.data.relevant_articles" :key="i">
+                      {{ article }}
+                    </li>
+                  </ul>
+                </div>
+
+                <div v-if="validation.data.missing_fields?.length" class="ai-block">
+                  <p class="muted">Yetishmayotgan ma'lumotlar</p>
+                  <ul>
+                    <li v-for="(field, i) in validation.data.missing_fields" :key="i">
+                      {{ field }}
+                    </li>
+                  </ul>
+                </div>
+
+                <div v-if="validation.data.recommendations?.length" class="ai-block">
+                  <p class="muted">Tavsiyalar</p>
+                  <ul>
+                    <li v-for="(rec, i) in validation.data.recommendations" :key="i">
+                      {{ rec }}
+                    </li>
+                  </ul>
+                </div>
+              </BaseCard>
+
+              <p v-if="validation.error" class="error-text">{{ validation.error }}</p>
             </div>
           </template>
 
@@ -234,11 +381,23 @@ const handleNext = () => {
           <p class="eyebrow">AI yordam</p>
           <h2>LexPredictor</h2>
           <p class="muted">
-            Kiritilgan ma’lumotlarga ko‘ra, ish mehnat nizolari bo‘yicha 142 ta o‘xshash
-            pretsedentga mos keladi.
+            <template v-if="validation.data?.is_complete === false">
+              Arizada {{ validation.data?.missing_fields?.length || 0 }} ta kamchilik bor.
+              Davom etishdan oldin to'ldiring.
+            </template>
+            <template v-else-if="validation.data">
+              AI tahlil tugatildi. Pastdagi tavsiyalarni ko'rib chiqing.
+            </template>
+            <template v-else>
+              Step 3 da arizani to'ldiring va AI tahliliga yuboring.
+            </template>
           </p>
-          <strong class="metric">73%</strong>
-          <p>Yutish ehtimoli</p>
+          <strong class="metric">{{ validation.data ? '✓' : '—' }}</strong>
+          <p>{{ validation.data ? 'AI tahlil bajarildi' : 'AI tahlil kutilmoqda' }}</p>
+          <div class="ai-status">
+            <Loader2 v-if="validation.loading" :size="14" class="spin" />
+            <span v-if="validation.loading">Llama 3.2:3b ishlamoqda...</span>
+          </div>
         </aside>
       </div>
     </section>
@@ -348,6 +507,60 @@ textarea {
   color: var(--gray-900);
   padding: 12px;
   outline: 0;
+  font-family: inherit;
+}
+
+.ai-result {
+  margin-top: 10px;
+}
+
+.ai-result h3 {
+  margin: 8px 0 14px;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--gray-900);
+}
+
+.ai-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 13px;
+}
+
+.ai-row span {
+  color: var(--gray-500);
+}
+
+.ai-row strong {
+  color: var(--gray-900);
+  text-align: right;
+}
+
+.ai-block {
+  margin-top: 14px;
+}
+
+.ai-block .muted {
+  margin: 0 0 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ai-block ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--gray-700);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.error-text {
+  color: var(--gray-700);
+  font-size: 13px;
 }
 
 .upload {
@@ -431,6 +644,27 @@ textarea {
 
 .ai-panel .metric {
   color: var(--stat-blue);
+  font-size: 48px;
+  font-weight: 800;
+}
+
+.ai-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  color: var(--gray-500);
+  font-size: 12px;
+}
+
+.spin {
+  animation: spin 900ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 980px) {

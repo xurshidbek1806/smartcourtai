@@ -1,73 +1,154 @@
 <script setup>
-import { ref } from 'vue';
-import { FileDown, RefreshCcw, WandSparkles } from 'lucide-vue-next';
+import { computed, onBeforeUnmount, reactive, ref } from 'vue';
+import { FileDown, Loader2, RefreshCcw, StopCircle, WandSparkles } from 'lucide-vue-next';
 
 import RoleShell from '@/layouts/RoleShell.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseCard from '@/components/ui/BaseCard.vue';
+import BaseInput from '@/components/ui/BaseInput.vue';
 import { judgeNav } from '@/data/navigation';
 import { useUi } from '@/stores/ui';
+import { streamSmartJudge } from '@/lib/api';
 
 const ui = useUi();
+
+const form = reactive({
+  title: 'Ishga tiklash va ish haqi undirish to\'g\'risida',
+  disputeType: 'labor',
+  parties: 'Da\'vogar: A. Karimov; Javobgar: \'Alfa\' MChJ',
+  facts:
+    'Xodim shtat qisqartirilishi bahonasida noqonuniy ishdan boshatilgan. Shtat aslida ' +
+    'qisqartirilmagan, o\'rniga boshqa odam olingan. 3 oylik ish haqi ham to\'lanmagan, ' +
+    'jami 9 000 000 so\'m.'
+});
+
+const draft = ref('');
 const streaming = ref(false);
-const draft = ref(
-  'Sud ish materiallarini o‘rganib, taraflar o‘rtasidagi mehnat shartnomasi 2025 yil 14 noyabrda tuzilganligi aniqlandi. Da’vogar talabining bir qismi asosli deb topiladi...'
+const elapsedSeconds = ref(0);
+const tokenCount = ref(0);
+
+const sources = reactive({
+  laws: [],
+  precedents: []
+});
+
+let controller = null;
+let timer = null;
+
+const wordCount = computed(() =>
+  draft.value.trim() ? draft.value.trim().split(/\s+/).length : 0
 );
 
-const streamDraft = () => {
+const startTimer = () => {
+  const t0 = Date.now();
+  timer = window.setInterval(() => {
+    elapsedSeconds.value = Math.round((Date.now() - t0) / 100) / 10;
+  }, 100);
+};
+const stopTimer = () => {
+  if (timer) {
+    window.clearInterval(timer);
+    timer = null;
+  }
+};
+
+const generateDraft = () => {
   if (streaming.value) return;
+  if (!form.facts.trim()) {
+    ui.pushToast({
+      type: 'error',
+      title: 'Ish holatlari bo\'sh',
+      text: 'Avval ish holatlarini kiriting.'
+    });
+    return;
+  }
+
   streaming.value = true;
   draft.value = '';
-  const tokens = [
-    'Sud ',
-    'ish ',
-    'materiallarini ',
-    'o‘rganib, ',
-    'taraflar ',
-    'o‘rtasidagi ',
-    'mehnat ',
-    'shartnomasi ',
-    'mavjudligi ',
-    'va ',
-    'kompensatsiya ',
-    'talabi ',
-    'qisman ',
-    'asosli ',
-    'ekani ',
-    'aniqlandi. ',
-    'Qaror ',
-    'qoralamasi ',
-    'Mehnat ',
-    'kodeksi ',
-    '161-167 ',
-    'moddalariga ',
-    'tayangan ',
-    'holda ',
-    'shakllantirildi.'
-  ];
-  let index = 0;
-  const timer = window.setInterval(() => {
-    draft.value += tokens[index];
-    index += 1;
-    if (index >= tokens.length) {
-      window.clearInterval(timer);
-      streaming.value = false;
-      ui.pushToast({
-        type: 'success',
-        title: 'Qoralama tayyor',
-        text: 'SmartJudge draft yaratishni yakunladi.'
-      });
+  sources.laws = [];
+  sources.precedents = [];
+  elapsedSeconds.value = 0;
+  tokenCount.value = 0;
+  startTimer();
+
+  controller = streamSmartJudge(
+    {
+      title: form.title,
+      dispute_type: form.disputeType,
+      parties: form.parties,
+      facts: form.facts
+    },
+    (event) => {
+      switch (event.type) {
+        case 'sources':
+          sources.laws = event.laws || [];
+          sources.precedents = event.precedents || [];
+          break;
+        case 'token':
+          draft.value += event.content;
+          tokenCount.value += 1;
+          break;
+        case 'done':
+          streaming.value = false;
+          stopTimer();
+          ui.pushToast({
+            type: 'success',
+            title: 'Qoralama tayyor',
+            text: `SmartJudge ${tokenCount.value} ta token generatsiya qildi.`
+          });
+          break;
+        case 'error':
+          streaming.value = false;
+          stopTimer();
+          ui.pushToast({
+            type: 'error',
+            title: 'Streaming xatosi',
+            text: event.message || 'Backend bilan bog\'lanib bo\'lmadi.'
+          });
+          break;
+      }
     }
-  }, 90);
+  );
+};
+
+const stopStream = () => {
+  if (controller) controller.abort();
+  streaming.value = false;
+  stopTimer();
+  ui.pushToast({
+    type: 'success',
+    title: 'To\'xtatildi',
+    text: 'Generatsiya foydalanuvchi tomonidan bekor qilindi.'
+  });
 };
 
 const exportDraft = () => {
+  if (!draft.value.trim()) {
+    ui.pushToast({
+      type: 'error',
+      title: 'Qoralama bo\'sh',
+      text: 'Avval qoralama yarating.'
+    });
+    return;
+  }
+  const blob = new Blob([draft.value], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `qaror-qoralamasi-${Date.now()}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
   ui.pushToast({
     type: 'success',
     title: 'Eksport tayyor',
-    text: 'DOCX/PDF qoralama tayyorlandi.'
+    text: 'Qaror qoralamasi yuklab olindi.'
   });
 };
+
+onBeforeUnmount(() => {
+  if (controller) controller.abort();
+  stopTimer();
+});
 </script>
 
 <template>
@@ -76,31 +157,96 @@ const exportDraft = () => {
       <main class="panel">
         <div class="panel-header">
           <div>
-            <p class="eyebrow">Ish #2026-001234</p>
+            <p class="eyebrow">Lokal AI · llama3.2:3b · RAG</p>
             <h1>Qaror qoralamasi</h1>
           </div>
-          <BaseButton :icon="WandSparkles" @click="streamDraft">Qoralama yaratish</BaseButton>
+          <div class="header-actions">
+            <BaseButton
+              v-if="!streaming"
+              :icon="WandSparkles"
+              @click="generateDraft"
+            >
+              Qoralama yaratish
+            </BaseButton>
+            <BaseButton
+              v-else
+              variant="secondary"
+              :icon="StopCircle"
+              @click="stopStream"
+            >
+              To'xtatish
+            </BaseButton>
+          </div>
         </div>
-        <div class="editor" contenteditable="true">
-          {{ draft }}<span v-if="streaming" class="cursor" />
+
+        <!-- Inputs -->
+        <div class="case-form">
+          <BaseInput v-model="form.title" label="Ish nomi" placeholder="Ish nomi" />
+          <div class="grid grid-2">
+            <BaseInput v-model="form.disputeType" label="Nizo turi" placeholder="labor, civil, criminal..." />
+            <BaseInput v-model="form.parties" label="Tomonlar" placeholder="Da'vogar / javobgar" />
+          </div>
+          <label class="textarea">
+            <span>Ish holatlari (sudga taqdim etilgan ma'lumotlar)</span>
+            <textarea v-model="form.facts" rows="5" />
+          </label>
         </div>
+
+        <!-- Streaming stats -->
+        <div v-if="streaming || draft" class="stats">
+          <span><strong>{{ tokenCount }}</strong> token</span>
+          <span><strong>{{ wordCount }}</strong> so'z</span>
+          <span><strong>{{ elapsedSeconds }}</strong> s</span>
+          <span v-if="streaming" class="live">
+            <Loader2 :size="14" class="spin" /> Lokal LLM generatsiya qilmoqda...
+          </span>
+        </div>
+
+        <!-- Draft -->
+        <div class="editor" :contenteditable="!streaming" :class="{ streaming }">
+          <template v-if="draft || streaming">
+            {{ draft }}<span v-if="streaming" class="cursor" />
+          </template>
+          <template v-else>
+            <p class="empty">
+              Yuqorida ish holatlarini to'ldiring va "Qoralama yaratish" tugmasini bosing.
+              Llama 3.2:3b modeli RAG orqali tegishli qonun moddalarini topib, real vaqtda
+              sud qarori qoralamasini token-by-token generatsiya qiladi.
+            </p>
+          </template>
+        </div>
+
         <div class="toolbar">
-          <BaseButton variant="secondary">Qonun moddasi qo‘shish</BaseButton>
-          <BaseButton variant="secondary" :icon="RefreshCcw">Qayta yozish</BaseButton>
-          <BaseButton :icon="FileDown" @click="exportDraft">Eksport DOCX/PDF</BaseButton>
+          <BaseButton variant="secondary" :icon="RefreshCcw" :disabled="streaming" @click="generateDraft">
+            Qayta yaratish
+          </BaseButton>
+          <BaseButton :icon="FileDown" :disabled="streaming || !draft" @click="exportDraft">
+            Eksport .txt
+          </BaseButton>
         </div>
       </main>
-      <aside class="grid">
+
+      <aside class="grid right-rail">
         <BaseCard>
           <h2>Foydalanilgan moddalar</h2>
-          <p>Mehnat kodeksi 161, 167-moddalar</p>
-          <p>Fuqarolik kodeksi 985-modda</p>
+          <p v-if="!sources.laws.length" class="muted">
+            Qoralama yaratilgach, RAG orqali topilgan qonun moddalari shu yerda ko'rinadi.
+          </p>
+          <div v-for="(law, i) in sources.laws" :key="i" class="source-item">
+            <strong>{{ law.code }} {{ law.article }}-modda</strong>
+            <p>{{ law.title }}</p>
+          </div>
         </BaseCard>
         <BaseCard>
-          <h2>O‘xshash pretsedentlar</h2>
-          <p>#2025-004982 • 82% mos</p>
-          <p>#2024-010214 • 77% mos</p>
-          <p>#2023-006001 • 74% mos</p>
+          <h2>O'xshash pretsedentlar</h2>
+          <p v-if="!sources.precedents.length" class="muted">
+            Qoralama yaratilgach, Qdrant vector qidiruvi natijasida o'xshash pretsedentlar
+            shu yerda ko'rinadi.
+          </p>
+          <div v-for="(p, i) in sources.precedents" :key="i" class="source-item">
+            <strong>{{ p.reference }}</strong>
+            <p>{{ p.outcome }}<span v-if="p.score"> · {{ Math.round(p.score * 100) }}% mos</span></p>
+          </div>
         </BaseCard>
       </aside>
     </section>
@@ -116,18 +262,84 @@ const exportDraft = () => {
 
 h1 {
   margin: 0;
-  font-size: clamp(34px, 5vw, 58px);
+  font-size: clamp(28px, 4vw, 44px);
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.case-form {
+  display: grid;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.textarea {
+  display: grid;
+  gap: 8px;
+  color: var(--gray-700);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.textarea textarea {
+  resize: vertical;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  color: var(--gray-900);
+  padding: 12px;
+  outline: 0;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin: 12px 0;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  background: var(--gray-100);
+  color: var(--gray-500);
+  font-size: 12px;
+}
+
+.stats strong {
+  color: var(--gray-900);
+  font-size: 14px;
+}
+
+.stats .live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .editor {
-  min-height: 420px;
+  min-height: 380px;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   background: var(--gray-100);
   padding: 24px;
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1.7;
   outline: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.editor.streaming {
+  border-color: var(--gray-900);
+}
+
+.empty {
+  color: var(--gray-500);
+  font-size: 14px;
 }
 
 .cursor {
@@ -137,11 +349,57 @@ h1 {
   margin-left: 3px;
   background: var(--gray-900);
   animation: blink 900ms infinite;
+  vertical-align: text-bottom;
 }
 
 @keyframes blink {
   50% {
     opacity: 0;
+  }
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.right-rail {
+  position: sticky;
+  top: 84px;
+  height: max-content;
+}
+
+.source-item {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.source-item:last-child {
+  border-bottom: 0;
+}
+
+.source-item strong {
+  display: block;
+  color: var(--gray-900);
+  font-size: 13px;
+}
+
+.source-item p {
+  margin: 4px 0 0;
+  color: var(--gray-500);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.spin {
+  animation: spin 900ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 

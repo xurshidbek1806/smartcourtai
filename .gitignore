@@ -8,3 +8,8 @@ coverage/
 *.png
 BIZNES_PITCH.md
 SOHA_PITCH.md
+
+# Temporary work artifacts from PDF/PPTX generation
+backend/tests/preview*/
+backend/tests/pitch_work/
+backend/tests/~$*

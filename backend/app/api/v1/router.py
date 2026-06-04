@@ -10,12 +10,14 @@ from app.api.v1 import (
     dashboard,
     documents,
     justiscribe,
+    mvp,
     notifications,
     system,
 )
 
 api_router = APIRouter()
 api_router.include_router(system.router)
+api_router.include_router(mvp.router)  # public, auth-free MVP endpoints
 api_router.include_router(auth.router)
 api_router.include_router(dashboard.router)
 api_router.include_router(claims.router)

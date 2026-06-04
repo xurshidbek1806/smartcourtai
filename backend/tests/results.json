@@ -1,0 +1,396 @@
+{
+  "total": 43,
+  "passed": 43,
+  "failed": 0,
+  "pass_rate": 100.0,
+  "total_elapsed_s": 527.56,
+  "results": [
+    {
+      "category": "Tizim",
+      "name": "/system/health",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 27,
+      "sample": "{\"status\": \"ok\", \"app\": \"SmartCourt AI\"}",
+      "details": ""
+    },
+    {
+      "category": "Tizim",
+      "name": "/system/status (to'liq holat)",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 4128,
+      "sample": "{\"app\": \"SmartCourt AI\", \"env\": \"development\", \"services\": {\"ollama\": {\"available\": true, \"llm_model\": \"llama3.2:3b\", \"embed_model\": \"nomic-embed-text\", \"models\": [\"llama3.2:3b\", \"nomic-embed-text:latest\", \"qwen2.5-coder:7b\"]}, \"qdrant\": {\"laws\": 16, \"precedents\": 8}, \"neo4j\": {\"available\": false}}}",
+      "details": ""
+    },
+    {
+      "category": "Auth",
+      "name": "Login: citizen (fuqaro@smartcourt.uz)",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 371,
+      "sample": "{\"access_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwicm9sZSI6ImNpdGl6ZW4iLCJleHAiOjE3ODExNTg2ODIsImlhdCI6MTc4MDU1Mzg4Mn0.08mZUCptDwZFxlVgaqIQPVtlyWGdrTBptho_gcllxrU\", \"token_type\": \"bearer\", \"role\": \"citizen\", \"user_id\": 1, \"full_name\": \"Demo Fuqaro\"}",
+      "details": ""
+    },
+    {
+      "category": "Auth",
+      "name": "Login: judge (sudya@smartcourt.uz)",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 374,
+      "sample": "{\"access_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwicm9sZSI6Imp1ZGdlIiwiZXhwIjoxNzgxMTU4NjgyLCJpYXQiOjE3ODA1NTM4ODJ9.AgW47zxY7Zr1_a7Xg-KQoBFot5j4Dsb91DiCHuFdyH8\", \"token_type\": \"bearer\", \"role\": \"judge\", \"user_id\": 2, \"full_name\": \"Karimov Alisher Akramovich\"}",
+      "details": ""
+    },
+    {
+      "category": "Auth",
+      "name": "Login: lawyer (advokat@smartcourt.uz)",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 413,
+      "sample": "{\"access_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzIiwicm9sZSI6Imxhd3llciIsImV4cCI6MTc4MTE1ODY4MywiaWF0IjoxNzgwNTUzODgzfQ.6Ybtj2jMT5rAcTjd2wWsDWFw1tlmwDR_cRmqZbJPFW0\", \"token_type\": \"bearer\", \"role\": \"lawyer\", \"user_id\": 3, \"full_name\": \"Demo Advokat\"}",
+      "details": ""
+    },
+    {
+      "category": "Auth",
+      "name": "Login: admin (admin@smartcourt.uz)",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 469,
+      "sample": "{\"access_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0Iiwicm9sZSI6ImFkbWluIiwiZXhwIjoxNzgxMTU4NjgzLCJpYXQiOjE3ODA1NTM4ODN9.UtDEZR_fOzH8b9kBghKV937CzwH2IOQFxosZCT42Tl8\", \"token_type\": \"bearer\", \"role\": \"admin\", \"user_id\": 4, \"full_name\": \"Tizim Administratori\"}",
+      "details": ""
+    },
+    {
+      "category": "Auth",
+      "name": "Login: oversight (nazorat@smartcourt.uz)",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 456,
+      "sample": "{\"access_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1Iiwicm9sZSI6Im92ZXJzaWdodCIsImV4cCI6MTc4MTE1ODY4NCwiaWF0IjoxNzgwNTUzODg0fQ.M1uX4e3R8f1dTCTuVX-p9Bp4ymplXe_XhMLLcUOrzyw\", \"token_type\": \"bearer\", \"role\": \"oversight\", \"user_id\": 5, \"full_name\": \"Nazorat Xodimi\"}",
+      "details": ""
+    },
+    {
+      "category": "Auth",
+      "name": "/auth/me [citizen]",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 32,
+      "sample": "{\"id\": 1, \"email\": \"fuqaro@smartcourt.uz\", \"full_name\": \"Demo Fuqaro\", \"role\": \"citizen\", \"pinfl\": null, \"phone\": null, \"court_name\": null, \"is_verified\": true}",
+      "details": ""
+    },
+    {
+      "category": "Auth",
+      "name": "/auth/me [judge]",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 33,
+      "sample": "{\"id\": 2, \"email\": \"sudya@smartcourt.uz\", \"full_name\": \"Karimov Alisher Akramovich\", \"role\": \"judge\", \"pinfl\": null, \"phone\": null, \"court_name\": \"Andijon viloyat sudi\", \"is_verified\": true}",
+      "details": ""
+    },
+    {
+      "category": "Auth",
+      "name": "/auth/me [lawyer]",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 12,
+      "sample": "{\"id\": 3, \"email\": \"advokat@smartcourt.uz\", \"full_name\": \"Demo Advokat\", \"role\": \"lawyer\", \"pinfl\": null, \"phone\": null, \"court_name\": null, \"is_verified\": true}",
+      "details": ""
+    },
+    {
+      "category": "Auth",
+      "name": "/auth/me [admin]",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 18,
+      "sample": "{\"id\": 4, \"email\": \"admin@smartcourt.uz\", \"full_name\": \"Tizim Administratori\", \"role\": \"admin\", \"pinfl\": null, \"phone\": null, \"court_name\": null, \"is_verified\": true}",
+      "details": ""
+    },
+    {
+      "category": "Auth",
+      "name": "/auth/me [oversight]",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 21,
+      "sample": "{\"id\": 5, \"email\": \"nazorat@smartcourt.uz\", \"full_name\": \"Nazorat Xodimi\", \"role\": \"oversight\", \"pinfl\": null, \"phone\": null, \"court_name\": null, \"is_verified\": true}",
+      "details": ""
+    },
+    {
+      "category": "Auth",
+      "name": "Login: noto'g'ri parol (401 kutiladi)",
+      "status_code": 401,
+      "ok": true,
+      "elapsed_ms": 418,
+      "sample": "{\"detail\": \"Email yoki parol noto'g'ri\"}",
+      "details": ""
+    },
+    {
+      "category": "Auth",
+      "name": "/auth/me tokensiz (401 kutiladi)",
+      "status_code": 401,
+      "ok": true,
+      "elapsed_ms": 22,
+      "sample": "{\"detail\": \"Avtorizatsiya talab qilinadi\"}",
+      "details": ""
+    },
+    {
+      "category": "Auth",
+      "name": "Yangi ro'yxatdan o'tish (201)",
+      "status_code": 201,
+      "ok": true,
+      "elapsed_ms": 507,
+      "sample": "{\"access_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4Iiwicm9sZSI6ImNpdGl6ZW4iLCJleHAiOjE3ODExNTg2ODUsImlhdCI6MTc4MDU1Mzg4NX0.SMOnaeMWyibO5zfK0EX25wEXjvN9L5aXjIXJzEBzx3k\", \"token_type\": \"bearer\", \"role\": \"citizen\", \"user_id\": 8, \"full_name\": \"Test Foydalanuvchi\"}",
+      "details": ""
+    },
+    {
+      "category": "Fuqaro paneli",
+      "name": "Dashboard",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 42,
+      "sample": "{\"greeting_name\": \"Demo Fuqaro\", \"total_claims\": 2, \"active_claims\": 2, \"drafts\": 0, \"recent\": [{\"id\": 2, \"reference\": \"2026-274276\", \"title\": \"Noqonuniy ishdan bo'shatish to'g'risida da'vo\", \"status\": \"accepted\"}, {\"id\": 1, \"reference\": \"2026-039202\", \"title\": \"Noqonuniy ishdan bo'shatish to'g'risi…",
+      "details": ""
+    },
+    {
+      "category": "Fuqaro paneli",
+      "name": "Yangi ariza yaratish (POST /claims)",
+      "status_code": 201,
+      "ok": true,
+      "elapsed_ms": 31,
+      "sample": "{\"id\": 3, \"reference\": \"2026-312017\", \"claimant_id\": 1, \"dispute_type\": \"labor\", \"title\": \"Noqonuniy ishdan bo'shatish to'g'risida da'vo\", \"description\": \"Men 'Alfa' MChJ da 5 yil ishladim. 2026-yil 15-may kuni shtat qisqartirilishi bahonasida ishdan bo'shatildim. Aslida shtat qisqartirilmagan, meni…",
+      "details": ""
+    },
+    {
+      "category": "Fuqaro paneli",
+      "name": "Arizalarim ro'yxati",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 23,
+      "sample": "jami 3 ta ariza",
+      "details": ""
+    },
+    {
+      "category": "Fuqaro paneli",
+      "name": "Ariza tafsiloti #3",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 22,
+      "sample": "{\"id\": 3, \"reference\": \"2026-312017\", \"claimant_id\": 1, \"dispute_type\": \"labor\", \"title\": \"Noqonuniy ishdan bo'shatish to'g'risida da'vo\", \"description\": \"Men 'Alfa' MChJ da 5 yil ishladim. 2026-yil 15-may kuni shtat qisqartirilishi bahonasida ishdan bo'shatildim. Aslida shtat qisqartirilmagan, meni…",
+      "details": ""
+    },
+    {
+      "category": "Fuqaro paneli",
+      "name": "Arizani tahrirlash (PATCH)",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 34,
+      "sample": "{\"id\": 3, \"reference\": \"2026-312017\", \"claimant_id\": 1, \"dispute_type\": \"labor\", \"title\": \"Noqonuniy ishdan bo'shatish to'g'risida da'vo\", \"description\": \"Men 'Alfa' MChJ da 5 yil ishladim. 2026-yil 15-may kuni shtat qisqartirilishi bahonasida ishdan bo'shatildim. Aslida shtat qisqartirilmagan, meni…",
+      "details": ""
+    },
+    {
+      "category": "Fuqaro paneli",
+      "name": "Arizani yuborish (submit)",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 23,
+      "sample": "{\"id\": 3, \"reference\": \"2026-312017\", \"claimant_id\": 1, \"dispute_type\": \"labor\", \"title\": \"Noqonuniy ishdan bo'shatish to'g'risida da'vo\", \"description\": \"Men 'Alfa' MChJ da 5 yil ishladim. 2026-yil 15-may kuni shtat qisqartirilishi bahonasida ishdan bo'shatildim. Aslida shtat qisqartirilmagan, meni…",
+      "details": ""
+    },
+    {
+      "category": "Fuqaro paneli",
+      "name": "RBAC: fuqaro admin panelga kira olmasligi (403)",
+      "status_code": 403,
+      "ok": true,
+      "elapsed_ms": 20,
+      "sample": "{\"detail\": \"Ruxsat yo'q. Talab qilinadigan rol: admin\"}",
+      "details": ""
+    },
+    {
+      "category": "Sudya paneli",
+      "name": "Sudya dashboard",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 46,
+      "sample": "{\"judge_name\": \"Karimov Alisher Akramovich\", \"court\": \"Andijon viloyat sudi\", \"total_cases\": 2, \"active_cases\": 0, \"pending\": 0, \"decided\": 2, \"monthly_norm\": 16, \"ai_drafts_ready\": 0, \"today_cases\": [{\"id\": 1, \"reference\": \"2026-039202\", \"title\": \"Noqonuniy ishdan bo'shatish to'g'risida da'vo\", \"st…",
+      "details": ""
+    },
+    {
+      "category": "Sudya paneli",
+      "name": "Mening ishlarim ro'yxati",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 19,
+      "sample": "jami 2 ta ish",
+      "details": ""
+    },
+    {
+      "category": "Sudya paneli",
+      "name": "Arizadan ish ochish (POST /cases/from-claim)",
+      "status_code": 201,
+      "ok": true,
+      "elapsed_ms": 32,
+      "sample": "{\"id\": 3, \"reference\": \"2026-312017\", \"claim_id\": 3, \"judge_id\": 2, \"dispute_type\": \"labor\", \"title\": \"Noqonuniy ishdan bo'shatish to'g'risida da'vo\", \"status\": \"open\", \"next_hearing_at\": null, \"decision_draft\": null, \"decision_final\": null, \"ai_meta\": null, \"created_at\": \"2026-06-04T06:18:05.632555…",
+      "details": ""
+    },
+    {
+      "category": "Sudya paneli",
+      "name": "Ish tafsiloti #3",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 23,
+      "sample": "{\"id\": 3, \"reference\": \"2026-312017\", \"claim_id\": 3, \"judge_id\": 2, \"dispute_type\": \"labor\", \"title\": \"Noqonuniy ishdan bo'shatish to'g'risida da'vo\", \"status\": \"open\", \"next_hearing_at\": null, \"decision_draft\": null, \"decision_final\": null, \"ai_meta\": null, \"created_at\": \"2026-06-04T06:18:05.632555…",
+      "details": ""
+    },
+    {
+      "category": "Sudya paneli",
+      "name": "Qaror imzolash (decision_signed_at)",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 42,
+      "sample": "{\"id\": 3, \"reference\": \"2026-312017\", \"claim_id\": 3, \"judge_id\": 2, \"dispute_type\": \"labor\", \"title\": \"Noqonuniy ishdan bo'shatish to'g'risida da'vo\", \"status\": \"decided\", \"next_hearing_at\": null, \"decision_draft\": null, \"decision_final\": \"Da'vo qisman qanoatlantirildi. Ishga tiklash haqida sud qaro…",
+      "details": ""
+    },
+    {
+      "category": "Sudya paneli",
+      "name": "RBAC: sudya admin panelga kira olmasligi (403)",
+      "status_code": 403,
+      "ok": true,
+      "elapsed_ms": 18,
+      "sample": "{\"detail\": \"Ruxsat yo'q. Talab qilinadigan rol: admin\"}",
+      "details": ""
+    },
+    {
+      "category": "Admin paneli",
+      "name": "Dashboard statistika",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 22,
+      "sample": "{\"total_users\": 8, \"total_claims\": 3, \"total_cases\": 3}",
+      "details": ""
+    },
+    {
+      "category": "Admin paneli",
+      "name": "Barcha foydalanuvchilar ro'yxati",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 16,
+      "sample": "jami 8 ta foydalanuvchi",
+      "details": ""
+    },
+    {
+      "category": "Admin paneli",
+      "name": "Foydalanuvchilarni rol bo'yicha filtrlash",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 18,
+      "sample": "[{\"id\": 2, \"email\": \"sudya@smartcourt.uz\", \"full_name\": \"Karimov Alisher Akramovich\", \"role\": \"judge\", \"pinfl\": null, \"phone\": null, \"court_name\": \"Andijon viloyat sudi\", \"is_verified\": true}]",
+      "details": ""
+    },
+    {
+      "category": "Admin paneli",
+      "name": "Audit log",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 21,
+      "sample": "0 ta yozuv",
+      "details": ""
+    },
+    {
+      "category": "Admin paneli",
+      "name": "AI modellari holati",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 4080,
+      "sample": "{\"ollama_available\": true, \"active_llm\": \"llama3.2:3b\", \"active_embed\": \"nomic-embed-text\", \"installed_models\": [\"llama3.2:3b\", \"nomic-embed-text:latest\", \"qwen2.5-coder:7b\"], \"vector_store\": {\"laws\": 16, \"precedents\": 8}, \"neo4j_available\": false}",
+      "details": ""
+    },
+    {
+      "category": "AI: ClaimValidator",
+      "name": "Erkin matnli arizani JSON ga parslash",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 51260,
+      "sample": "{\"dispute_type\": \"labor\", \"jurisdiction\": \"Andijon viloyat fuqarolik sudi\", \"claimant\": \"Akmal Karimov\", \"respondent\": \"Beta MChJ\", \"amount\": 9000000, \"currency\": \"UZS\", \"relevant_articles\": [\"...\"], \"missing_fields\": [\"da'vo summasi va valyutasi (agar bor bo'lsa), da'vogar va javobgar ma'lumotlari (agar matnda mavjud bo'lsa)\"], \"is_complete\": false, \"summary\": \"Beta MChJ tomonidan 2026-yil aprelda noqonuniy ishdan boshatdi, shu jumla 3 oylik ish haqi 9,000,000 so'm tolanmagan.\", \"recommendation…",
+      "details": ""
+    },
+    {
+      "category": "AI: MediatoBot",
+      "name": "Sudgacha mediatsiya taklifi",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 53646,
+      "sample": "{\"success_probability\": 80, \"proposed_solution\": \"Xodim uchun 3 oylik ish haqi to'lash, noqonuniy bo'shatish uchun 150 000 so'ma to'lanmasligi va 750 000 so'ma jami to'lanmasligi taklif etiladi.\", \"claimant_concessions\": [\"Xodim uchun 3 oylik ish haqi to'lash\"], \"respondent_concessions\": [\"Xodim uchun noqonuniy bo'shatish uchun 150 000 so'ma to'lanmasligi\"], \"estimated_savings\": \"Sudga borilmasa tejaladigan vaqt va resurs (2 oylik ish haqi to'lash, noqonuniy bo'shatish uchun 150 000 so'ma to'lan…",
+      "details": ""
+    },
+    {
+      "category": "AI: LexPredictor",
+      "name": "Yutish ehtimoli + pretsedentlar",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 882,
+      "sample": "{\"win_probability\": 64, \"similar_cases_found\": 5, \"precedents\": [{\"reference\": \"2024-FK-0457\", \"outcome\": \"Da'vo qanoatlantirildi\", \"similarity\": 0.761}, {\"reference\": \"2024-FK-0712\", \"outcome\": \"Da'vo qisman qanoatlantirildi\", \"similarity\": 0.756}, {\"reference\": \"2024-JK-0156\", \"outcome\": \"Ayblov qisman tan olindi\", \"similarity\": 0.72}, {\"reference\": \"2023-IS-1203\", \"outcome\": \"Da'vo qanoatlantirildi\", \"similarity\": 0.716}, {\"reference\": \"2024-IS-0388\", \"outcome\": \"Da'vo rad etildi\", \"similarit…",
+      "details": ""
+    },
+    {
+      "category": "AI: EvidenceAnalyzer",
+      "name": "Hujjatdan huquqiy faktlar ajratish",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 45933,
+      "sample": "{\"facts\": [{\"title\": \"Shartnoma sanasi\", \"value\": \"2024-yil 15-mart\"}, {\"title\": \"Tomonlar\", \"value\": \"\"}, {\"title\": \"Alfa MChJ (INN 200123456)\", \"value\": \"\"}, {\"title\": \"A. Karimov\", \"value\": \"\"}, {\"title\": \"Summa\", \"value\": \"25,000,000 so'm\"}, {\"title\": \"Bajarish muddati\", \"value\": \"2024-yil 30-iyun\"}, {\"title\": \"Yetkazib beruvchi tovarni yetkazmagan\", \"value\": \"\"}, {\"title\": \"Avans\", \"value\": \"10,000,000 so'm\"}], \"dates\": [\"2024-yil 15-mart\"], \"amounts\": [\"25,000,000 so'm\", \"10,000,000 so'm\"]…",
+      "details": ""
+    },
+    {
+      "category": "AI: SentencAI",
+      "name": "Jazo diapazoni hisoblash",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 42364,
+      "sample": "{\"mitigating_factors\": [{\"factor\": \"Ayblanuvchi aybiga iqrorlik\", \"weight\": 8}, {\"factor\": \"Zararni qopladi\", \"weight\": 7}, {\"factor\": \"Jabrlanuvchi bilan yarashdi\", \"weight\": 9}], \"aggravating_factors\": [{\"factor\": \"Ilgari sudlanmagan\", \"weight\": 2}, {\"factor\": \"Oilada 3 bola bor\", \"weight\": 1}], \"mitigating_total\": 24, \"aggravating_total\": 5, \"recommended_range\": \"30-40 mln so'm zarar\", \"reasoning\": \"Asoslash (2-3 gap)\", \"legal_basis\": [\"Firibgarlik (JK 168-modda), Zarartushtlik\"]}",
+      "details": ""
+    },
+    {
+      "category": "AI: SmartJudge",
+      "name": "Sud qarori qoralamasi (1822 belgi)",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 293830,
+      "sample": "**SUD QARORI**\n\nDa'vo: A. Karimov va 'Alfa' MChJ tomonidan ishga tiklash va ish haqi undirish to'g'risida.\n\n**TASDIQLASH**\n\n1. **Qasddan odam o'ldirish moddasi**: Da'vogar A. Karimov shartnomada boshqacha tartib nazarda tutilgan bo'lsa, o'ziga yetkazilgan zararning o'rni to'liq qoplanishini talab qilishi mumkin.\n\n2. **Iqtisodiy sudlarda nizolarni hal qilish moddasi**: Da'vo asosida ish haqi undirish to'g'risida nizo mohiyati aniqlandi.\n\n3. **Shartnomani bir tomonlama bajarishdan bosh tortish moddasi**: Shartnomada boshqacha tartib nazarda tutilgan bo'lsa, sud faqat ish haqi qarzini undirish qi",
+      "details": ""
+    },
+    {
+      "category": "AI: AnonimusLaw",
+      "name": "Shaxsiy ma'lumotlarni maskalash (PII)",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 38,
+      "sample": "{\"anonymized_text\": \"Akmal Karimov, JSHSHIR: [JSHSHIR], pasport seriyasi [PASPORT], telefon [TELEFON], email [EMAIL], karta [KARTA]. Manzil: Andijon shahri, A.Navoiy ko'chasi.\", \"entities_found\": 5, \"names_masked\": 0, \"detail\": [{\"type\": \"CARD\", \"value\": \"8600123456789012\"}, {\"type\": \"PINFL\", \"value\": \"12345678901234\"}, {\"type\": \"PASSPORT\", \"value\": \"AA1234567\"}, {\"type\": \"PHONE\", \"value\": \"+998901234567\"}, {\"type\": \"EMAIL\", \"value\": \"akmal@example.com\"}]}",
+      "details": ""
+    },
+    {
+      "category": "AI: CorruptAlert",
+      "name": "Aloqalar grafidan tekshirish (Neo4j)",
+      "status_code": 503,
+      "ok": true,
+      "elapsed_ms": 4029,
+      "sample": "{\"detail\": \"Neo4j mavjud emas (graph profili)\"}",
+      "details": ""
+    },
+    {
+      "category": "AI: AutoExec",
+      "name": "Avto-ijro (bank/MIB/FHDYo mock)",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 30,
+      "sample": "{\"case_id\": 1, \"status\": \"execution_started\", \"steps\": [{\"system\": \"Bank\", \"action\": \"Hisobni bloklash\", \"status\": \"queued\"}, {\"system\": \"MIB\", \"action\": \"Chiqish cheklovi\", \"status\": \"queued\"}, {\"system\": \"FHDYo\", \"action\": \"Reestr yangilash\", \"status\": \"queued\"}], \"note\": \"Demo rejimi — haqiqiy integratsiya API kalitlarini talab qiladi.\"}",
+      "details": ""
+    },
+    {
+      "category": "AI: Assistant",
+      "name": "Yuridik chatbot (RAG + LLM)",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 23707,
+      "sample": "Qasddan odam o'ldirish haqida [JK 97-modda] quyidagicha quyup:\n\nQasddan odam o'ldirish, ya'ni boshqa shaxsning hayotidan qasddan mahrum qilish, ozodlikdan mahrum qilish bilan jazolanadi.",
+      "details": ""
+    }
+  ]
+}

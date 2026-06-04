@@ -66,7 +66,9 @@ class OllamaClient:
         if format_json:
             payload["format"] = "json"
 
-        async with httpx.AsyncClient(timeout=300) as client:
+        # CPU-bound 3B model can take several minutes for long contexts; set generous timeout.
+        timeout = httpx.Timeout(connect=10.0, read=900.0, write=30.0, pool=10.0)
+        async with httpx.AsyncClient(timeout=timeout) as client:
             r = await client.post(f"{self.base_url}/api/chat", json=payload)
             r.raise_for_status()
             return r.json()["message"]["content"]
@@ -95,7 +97,8 @@ class OllamaClient:
             },
         }
 
-        async with httpx.AsyncClient(timeout=600) as client:
+        timeout = httpx.Timeout(connect=10.0, read=900.0, write=30.0, pool=10.0)
+        async with httpx.AsyncClient(timeout=timeout) as client:
             async with client.stream(
                 "POST", f"{self.base_url}/api/chat", json=payload
             ) as resp:

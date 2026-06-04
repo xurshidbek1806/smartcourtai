@@ -74,11 +74,15 @@ class GraphService:
             f"[r IN relationships(path) | r.type] AS rels, "
             f"length(path) AS hops"
         )
-        async with driver.session() as session:
-            result = await session.run(query, a=person_a, b=person_b)
-            record = await result.single()
-            if not record:
-                return {"connected": False}
+        try:
+            async with driver.session() as session:
+                result = await session.run(query, a=person_a, b=person_b)
+                record = await result.single()
+        except Exception as exc:  # noqa: BLE001
+            logger.warning(f"Neo4j query failed (graph profile may be down): {exc}")
+            return None
+        if not record:
+            return {"connected": False}
             hops = record["hops"]
             risk = max(0, 100 - (hops - 1) * 25)  # closer link = higher risk
             return {
