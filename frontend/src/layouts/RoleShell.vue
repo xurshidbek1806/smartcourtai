@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { RouterLink, useRoute, useRouter } from 'vue-router';
+import { RouterLink, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useColorMode } from '@vueuse/core';
 import {
@@ -28,7 +28,6 @@ const props = defineProps({
   nav: { type: Array, required: true }
 });
 
-const route = useRoute();
 const router = useRouter();
 const ui = useUi();
 const { locale } = useI18n();
@@ -52,31 +51,6 @@ const groupedNav = computed(() =>
 );
 
 const bottomNav = computed(() => props.nav.slice(0, 4));
-
-const breadcrumbs = computed(() => {
-  const map = {
-    portal: 'Portal',
-    judge: 'Sudya',
-    admin: 'Admin',
-    oversight: 'Nazorat',
-    claims: 'Arizalar',
-    cases: 'Ishlar',
-    dashboard: 'Dashboard',
-    security: 'Xavfsizlik',
-    settings: 'Sozlamalar',
-    'ai-assistant': 'AI Assistant',
-    'smart-judge': 'SmartJudge'
-  };
-
-  const parts = route.path
-    .split('/')
-    .filter(Boolean)
-    .slice(0, 4)
-    .filter((part) => part !== 'dashboard')
-    .map((part) => map[part] ?? (part.startsWith('2026') ? `#${part}` : part.replaceAll('-', ' ')));
-
-  return parts.length > 1 ? parts : [];
-});
 
 const notifications = [
   { icon: Mail, title: 'Yangi xabar', text: 'Sudya qo‘shimcha dalil so‘radi.', tone: 'info' },
@@ -151,11 +125,6 @@ const finishTour = () => {
     <main class="app-main">
       <header class="topbar">
         <div>
-          <nav v-if="breadcrumbs.length" class="breadcrumbs" aria-label="Breadcrumbs">
-            <span v-for="(crumb, index) in breadcrumbs" :key="`${crumb}-${index}`">
-              {{ crumb }}
-            </span>
-          </nav>
           <strong>{{ title }}</strong>
           <p class="muted">{{ subtitle }}</p>
         </div>
@@ -306,22 +275,6 @@ const finishTour = () => {
 .topbar p {
   margin: 3px 0 0;
   font-size: 13px;
-}
-
-.breadcrumbs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 4px;
-  color: var(--gray-500);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.breadcrumbs span:not(:last-child)::after {
-  content: '/';
-  margin-left: 6px;
-  color: var(--gray-400);
 }
 
 .nav-group {

@@ -13,6 +13,7 @@ test('landing and core dashboards render', async ({ page }) => {
 
   await page.goto('/portal/claims/new');
   await expect(page.getByRole('heading', { name: 'Arizani sudga yuborish' })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Breadcrumbs' })).toHaveCount(0);
 
   await page.goto('/oversight/corruption/graph');
   await expect(
