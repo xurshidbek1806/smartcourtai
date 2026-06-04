@@ -380,8 +380,12 @@ a {
 }
 
 @media (max-width: 640px) {
+  .sidebar {
+    display: none;
+  }
+
   .app-main {
-    padding: 14px;
+    padding: 14px 14px 96px;
   }
 
   .topbar {

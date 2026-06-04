@@ -1,10 +1,34 @@
 <script setup>
+import { ref } from 'vue';
 import { Bookmark, Mic, Pause, Save, Square } from 'lucide-vue-next';
 
 import RoleShell from '@/layouts/RoleShell.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { judgeNav } from '@/data/navigation';
 import { hearings } from '@/data/mock';
+import { useUi } from '@/stores/ui';
+
+const ui = useUi();
+const paused = ref(false);
+const recording = ref(true);
+const microphone = ref(true);
+
+const saveTranscript = () => {
+  window.localStorage.setItem('smartcourt-live-transcript', JSON.stringify(hearings));
+  ui.pushToast({
+    type: 'success',
+    title: 'Stenogramma saqlandi',
+    text: 'Demo stenogramma lokal saqlandi.'
+  });
+};
+
+const addBookmark = () => {
+  ui.pushToast({
+    type: 'success',
+    title: 'Bookmark qo‘shildi',
+    text: 'Joriy vaqt belgilab qo‘yildi.'
+  });
+};
 </script>
 
 <template>
@@ -17,12 +41,16 @@ import { hearings } from '@/data/mock';
             <h1>Real-time stenogramma</h1>
           </div>
           <div class="toolbar">
-            <BaseButton variant="secondary" :icon="Pause">Pauza</BaseButton>
-            <BaseButton variant="secondary" :icon="Square">To‘xtatish</BaseButton>
-            <BaseButton :icon="Save">Saqlash</BaseButton>
+            <BaseButton variant="secondary" :icon="Pause" @click="paused = !paused">{{
+              paused ? 'Davom ettirish' : 'Pauza'
+            }}</BaseButton>
+            <BaseButton variant="secondary" :icon="Square" @click="recording = false"
+              >To‘xtatish</BaseButton
+            >
+            <BaseButton :icon="Save" @click="saveTranscript">Saqlash</BaseButton>
           </div>
         </div>
-        <div class="waveform">
+        <div class="waveform" :class="{ paused: paused || !recording }">
           <span v-for="bar in 80" :key="bar" :style="{ height: `${18 + ((bar * 17) % 70)}px` }" />
         </div>
         <article v-for="line in hearings" :key="line.time" class="transcript">
@@ -38,8 +66,12 @@ import { hearings } from '@/data/mock';
         <p><span class="status-dot" />167-modda eslatildi.</p>
         <p><span class="status-dot" />Hissiy zo‘riqish yuqori.</p>
         <div class="toolbar">
-          <BaseButton variant="secondary" :icon="Mic">Mikrofon</BaseButton>
-          <BaseButton variant="secondary" :icon="Bookmark">Bookmark</BaseButton>
+          <BaseButton variant="secondary" :icon="Mic" @click="microphone = !microphone">{{
+            microphone ? 'Mikrofon' : 'Mikrofon o‘chiq'
+          }}</BaseButton>
+          <BaseButton variant="secondary" :icon="Bookmark" @click="addBookmark"
+            >Bookmark</BaseButton
+          >
         </div>
       </aside>
     </section>
@@ -74,6 +106,10 @@ h1 {
   border-radius: 999px;
   background: var(--gray-900);
   opacity: 0.36;
+}
+
+.waveform.paused span {
+  opacity: 0.12;
 }
 
 .transcript {

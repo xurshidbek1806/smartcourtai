@@ -45,16 +45,18 @@ const roles = [
     <section class="hero">
       <div class="container">
         <p class="eyebrow reveal">O‘zbekiston sud tizimi uchun AI ekotizimi</p>
-        <h1 class="page-title reveal">Adolat. Tezroq. Aniqroq.</h1>
+        <h1 class="page-title reveal">Insonparvar adolat, soniyalar ichida.</h1>
         <p class="lead reveal">
           Sun’iy intellekt yordamida sud jarayonlarini 60% ga tezlashtiring, dalillarni avtomatik
           tahlil qiling va qarorlarni qonuniy asoslar bilan tayyorlang.
         </p>
         <div class="hero-actions reveal">
           <BaseButton size="xl" :icon="Play">{{ t('app.demo') }}</BaseButton>
-          <BaseButton variant="secondary" size="xl" :icon="ArrowRight" icon-position="right">
-            {{ t('app.details') }}
-          </BaseButton>
+          <RouterLink to="/problems">
+            <BaseButton variant="secondary" size="xl" :icon="ArrowRight" icon-position="right">
+              {{ t('app.details') }}
+            </BaseButton>
+          </RouterLink>
         </div>
         <nav class="role-quick reveal" aria-label="SmartCourt interfeyslari">
           <RouterLink v-for="role in roles" :key="role.title" :to="role.to">
@@ -76,9 +78,9 @@ const roles = [
     <section class="section container">
       <p class="eyebrow">Jarayon</p>
       <h2 class="section-title">Sud ishlarini AI bilan bitta oqimga yig‘ing.</h2>
-      <div class="grid grid-4 steps">
+      <div class="grid steps">
         <BaseCard
-          v-for="(step, index) in ['Qabul', 'Tahlil', 'Majlis', 'Qaror']"
+          v-for="(step, index) in ['Qabul', 'Tahlil', 'Majlis', 'Qaror', 'Ijro']"
           :key="step"
           interactive
         >
@@ -144,11 +146,13 @@ const roles = [
       <p class="eyebrow">10 ta modul</p>
       <h2 class="section-title">Har bir rol uchun to‘liq AI vositalar.</h2>
       <div class="grid grid-3 modules">
-        <BaseCard v-for="module in modules" :key="module.name" interactive>
-          <component :is="module.icon" :size="28" :stroke-width="1.5" />
-          <h3>{{ module.name }}</h3>
-          <p>{{ module.text }}</p>
-        </BaseCard>
+        <RouterLink v-for="module in modules" :key="module.name" :to="module.to">
+          <BaseCard interactive>
+            <component :is="module.icon" :size="28" :stroke-width="1.5" />
+            <h3>{{ module.name }}</h3>
+            <p>{{ module.text }}</p>
+          </BaseCard>
+        </RouterLink>
       </div>
     </section>
 
@@ -325,6 +329,10 @@ const roles = [
   margin-top: 30px;
 }
 
+.steps {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
 .interfaces {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -481,6 +489,7 @@ const roles = [
 
 @media (max-width: 820px) {
   .stats,
+  .steps,
   .cta,
   .feature-flow,
   .role-showcase {

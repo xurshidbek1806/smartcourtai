@@ -2,10 +2,12 @@ import { createRouter, createWebHistory } from 'vue-router';
 
 import LandingPage from '@/pages/marketing/LandingPage.vue';
 import MarketingPage from '@/pages/marketing/MarketingPage.vue';
+import ProblemsPage from '@/pages/marketing/ProblemsPage.vue';
 import AuthPage from '@/pages/system/AuthPage.vue';
 import SystemPage from '@/pages/system/SystemPage.vue';
 import PortalDashboard from '@/pages/portal/PortalDashboard.vue';
 import ClaimWizard from '@/pages/portal/ClaimWizard.vue';
+import ClaimValidator from '@/pages/portal/ClaimValidator.vue';
 import ClaimDetail from '@/pages/portal/ClaimDetail.vue';
 import AiAssistant from '@/pages/portal/AiAssistant.vue';
 import PortalGeneric from '@/pages/portal/PortalGeneric.vue';
@@ -19,6 +21,7 @@ import AuditLog from '@/pages/admin/AuditLog.vue';
 import AdminGeneric from '@/pages/admin/AdminGeneric.vue';
 import OversightDashboard from '@/pages/oversight/OversightDashboard.vue';
 import CorruptionGraph from '@/pages/oversight/CorruptionGraph.vue';
+import AutoExec from '@/pages/oversight/AutoExec.vue';
 import OversightGeneric from '@/pages/oversight/OversightGeneric.vue';
 
 const marketingPages = [
@@ -201,10 +204,12 @@ const settingsRoutes = [
 
 const routes = [
   { path: '/', name: 'home', component: LandingPage },
+  { path: '/problems', name: 'problems', component: ProblemsPage },
   ...marketingPages,
   ...marketingDetailPages,
   ...authRoutes,
   { path: '/portal/dashboard', component: PortalDashboard },
+  { path: '/portal/claim-validator', component: ClaimValidator },
   { path: '/portal/claims/new', component: ClaimWizard },
   { path: '/portal/claims/:id', component: ClaimDetail },
   { path: '/portal/ai-assistant', component: AiAssistant },
@@ -218,6 +223,7 @@ const routes = [
   { path: '/admin/security/audit-log', component: AuditLog },
   ...adminGeneric,
   { path: '/oversight/dashboard', component: OversightDashboard },
+  { path: '/oversight/auto-exec', component: AutoExec },
   { path: '/oversight/corruption/graph', component: CorruptionGraph },
   ...oversightGeneric,
   ...settingsRoutes,

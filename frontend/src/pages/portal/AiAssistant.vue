@@ -77,11 +77,37 @@ const streamAnswer = () => {
 };
 
 const copyMessage = () => {
+  const lastAnswer = [...messages.value].reverse().find((item) => item.role === 'ai')?.text ?? '';
+  navigator.clipboard?.writeText(lastAnswer);
   ui.pushToast({
     type: 'success',
     title: 'Nusxa olindi',
     text: 'AI javobi clipboard uchun tayyor.'
   });
+};
+
+const startNewChat = () => {
+  messages.value = [{ role: 'ai', text: 'Assalomu alaykum. Qaysi huquqiy masalada yordam beray?' }];
+  message.value = '';
+  ui.pushToast({ type: 'success', title: 'Yangi chat', text: 'Yangi suhbat boshlandi.' });
+};
+
+const useSuggestion = (text) => {
+  message.value = text;
+  sendMessage();
+};
+
+const attachFile = () => {
+  ui.pushToast({
+    type: 'info',
+    title: 'Fayl biriktirildi',
+    text: 'Demo hujjat suhbatga qo‘shildi.'
+  });
+};
+
+const recordVoice = () => {
+  message.value = 'Ovozli savol: davlat boji va zarur hujjatlar haqida ma’lumot bering.';
+  ui.pushToast({ type: 'info', title: 'Ovozli savol', text: 'Demo transkripsiya tayyorlandi.' });
 };
 </script>
 
@@ -89,7 +115,7 @@ const copyMessage = () => {
   <RoleShell title="AI Yuridik maslahatchi" subtitle="Claude-style huquqiy chat" :nav="portalNav">
     <section class="chat-shell">
       <aside class="panel conversations">
-        <BaseButton size="sm">Yangi chat</BaseButton>
+        <BaseButton size="sm" @click="startNewChat">Yangi chat</BaseButton>
         <a class="active">Mehnat nizosi</a>
         <a>Aliment masalasi</a>
         <a>Shartnoma bo‘yicha savol</a>
@@ -122,14 +148,24 @@ const copyMessage = () => {
           </article>
         </div>
         <div class="suggestions">
-          <button>Mehnat nizoni qanday hal qilaman?</button>
-          <button>Ajrim arizasini qaysi sudga beraman?</button>
-          <button>Davlat boji qancha?</button>
+          <button type="button" @click="useSuggestion('Mehnat nizoni qanday hal qilaman?')">
+            Mehnat nizoni qanday hal qilaman?
+          </button>
+          <button type="button" @click="useSuggestion('Ajrim arizasini qaysi sudga beraman?')">
+            Ajrim arizasini qaysi sudga beraman?
+          </button>
+          <button type="button" @click="useSuggestion('Davlat boji qancha?')">
+            Davlat boji qancha?
+          </button>
         </div>
         <form class="composer" @submit.prevent="sendMessage">
-          <button aria-label="Fayl yuklash" type="button"><Paperclip :size="18" /></button>
+          <button aria-label="Fayl yuklash" type="button" @click="attachFile">
+            <Paperclip :size="18" />
+          </button>
           <textarea v-model="message" placeholder="Savolingizni yozing..." rows="1" />
-          <button aria-label="Ovozli savol" type="button"><Mic :size="18" /></button>
+          <button aria-label="Ovozli savol" type="button" @click="recordVoice">
+            <Mic :size="18" />
+          </button>
           <button aria-label="Yuborish" type="submit"><Send :size="18" /></button>
         </form>
       </main>

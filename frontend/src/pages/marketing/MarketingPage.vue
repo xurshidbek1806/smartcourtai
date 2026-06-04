@@ -1,6 +1,6 @@
 <script setup>
-import { computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { computed, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
 import GlassNav from '@/components/marketing/GlassNav.vue';
 import SiteFooter from '@/components/marketing/SiteFooter.vue';
@@ -8,11 +8,56 @@ import BaseCard from '@/components/ui/BaseCard.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseInput from '@/components/ui/BaseInput.vue';
 import DataTable from '@/components/ui/DataTable.vue';
+import BaseModal from '@/components/ui/BaseModal.vue';
 import { marketingPages } from '@/data/pageRegistry';
+import { runDemoAction } from '@/services/demoActions';
+import { useUi } from '@/stores/ui';
 
 const route = useRoute();
+const router = useRouter();
+const ui = useUi();
 const pageKey = computed(() => String(route.name ?? 'features'));
 const page = computed(() => marketingPages[pageKey.value] ?? marketingPages.features);
+const formValues = ref({});
+const selectedCard = ref(null);
+
+watch(
+  page,
+  () => {
+    const saved = JSON.parse(
+      window.localStorage.getItem(`smartcourt-marketing:${pageKey.value}`) || '{}'
+    );
+    formValues.value = Object.fromEntries(
+      (page.value.formFields ?? []).map((field) => [field, saved[field] ?? ''])
+    );
+  },
+  { immediate: true }
+);
+
+const saveForm = () => {
+  window.localStorage.setItem(
+    `smartcourt-marketing:${pageKey.value}`,
+    JSON.stringify(formValues.value)
+  );
+  ui.pushToast({
+    type: 'success',
+    title: 'Ma’lumot saqlandi',
+    text: 'Demo ma’lumotlar yangilandi.'
+  });
+};
+
+const runAction = (label) => {
+  if (page.value.formFields?.length) saveForm();
+  runDemoAction({ label, ui, route, payload: formValues.value });
+};
+
+const openCard = (item) => {
+  if (item.to) {
+    router.push(item.to);
+    return;
+  }
+  selectedCard.value = item;
+};
 </script>
 
 <template>
@@ -31,7 +76,7 @@ const page = computed(() => marketingPages[pageKey.value] ?? marketingPages.feat
     </div>
 
     <div v-if="page.cards?.length" class="grid grid-3 cards">
-      <BaseCard v-for="item in page.cards" :key="item.title" interactive>
+      <BaseCard v-for="item in page.cards" :key="item.title" interactive @click="openCard(item)">
         <h2>{{ item.title }}</h2>
         <p>{{ item.text }}</p>
       </BaseCard>
@@ -43,9 +88,13 @@ const page = computed(() => marketingPages[pageKey.value] ?? marketingPages.feat
         <BaseInput
           v-for="field in page.formFields"
           :key="field"
+          v-model="formValues[field]"
           :label="field"
           :placeholder="field"
         />
+      </div>
+      <div class="form-actions">
+        <BaseButton @click="saveForm">Saqlash</BaseButton>
       </div>
     </section>
 
@@ -65,8 +114,21 @@ const page = computed(() => marketingPages[pageKey.value] ?? marketingPages.feat
       </article>
     </section>
 
-    <BaseButton v-if="page.primaryAction" size="lg">{{ page.primaryAction }}</BaseButton>
+    <BaseButton v-if="page.primaryAction" size="lg" @click="runAction(page.primaryAction)">{{
+      page.primaryAction
+    }}</BaseButton>
   </main>
+  <BaseModal
+    :open="Boolean(selectedCard)"
+    :title="selectedCard?.title ?? page.title"
+    @close="selectedCard = null"
+  >
+    <p>{{ selectedCard?.text }}</p>
+    <div class="form-actions">
+      <BaseButton variant="secondary" @click="selectedCard = null">Bekor qilish</BaseButton>
+      <BaseButton @click="runAction(selectedCard?.title)">Davom etish</BaseButton>
+    </div>
+  </BaseModal>
   <SiteFooter />
 </template>
 
@@ -95,6 +157,13 @@ p {
 }
 
 .form {
+  margin-top: 18px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
   margin-top: 18px;
 }
 

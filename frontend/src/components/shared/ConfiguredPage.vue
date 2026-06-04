@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import {
   ArrowRight,
@@ -16,6 +16,9 @@ import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseCard from '@/components/ui/BaseCard.vue';
 import BaseInput from '@/components/ui/BaseInput.vue';
 import DataTable from '@/components/ui/DataTable.vue';
+import BaseModal from '@/components/ui/BaseModal.vue';
+import { runDemoAction } from '@/services/demoActions';
+import { useUi } from '@/stores/ui';
 
 const props = defineProps({
   shellTitle: { type: String, required: true },
@@ -25,10 +28,48 @@ const props = defineProps({
 });
 
 const route = useRoute();
+const ui = useUi();
 const pattern = computed(() => route.matched[0]?.path ?? route.path);
 const page = computed(
   () => props.pages[pattern.value] ?? props.pages[route.path] ?? props.fallback
 );
+const formValues = ref({});
+const selectedCard = ref(null);
+
+const storageKey = computed(() => `smartcourt-page:${route.path}`);
+
+const loadForm = () => {
+  const saved = JSON.parse(window.localStorage.getItem(storageKey.value) || '{}');
+  formValues.value = Object.fromEntries(
+    (page.value.formFields ?? []).map((field) => [field, saved[field] ?? ''])
+  );
+};
+
+watch(page, loadForm, { immediate: true });
+
+const saveForm = () => {
+  window.localStorage.setItem(storageKey.value, JSON.stringify(formValues.value));
+  ui.pushToast({
+    type: 'success',
+    title: 'Ma’lumot saqlandi',
+    text: 'Demo ma’lumotlar yangilandi.'
+  });
+};
+
+const resetForm = () => {
+  formValues.value = Object.fromEntries((page.value.formFields ?? []).map((field) => [field, '']));
+  window.localStorage.removeItem(storageKey.value);
+  ui.pushToast({
+    type: 'info',
+    title: 'Forma tozalandi',
+    text: 'Kiritilgan qiymatlar tozalandi.'
+  });
+};
+
+const runAction = (label) => {
+  if (page.value.formFields?.length) saveForm();
+  runDemoAction({ label, ui, route, payload: formValues.value });
+};
 </script>
 
 <template>
@@ -41,10 +82,20 @@ const page = computed(
           <p class="lead">{{ page.description }}</p>
         </div>
         <div v-if="page.primaryAction || page.secondaryAction" class="toolbar">
-          <BaseButton v-if="page.secondaryAction" variant="secondary" :icon="SlidersHorizontal">
+          <BaseButton
+            v-if="page.secondaryAction"
+            variant="secondary"
+            :icon="SlidersHorizontal"
+            @click="resetForm"
+          >
             {{ page.secondaryAction }}
           </BaseButton>
-          <BaseButton v-if="page.primaryAction" :icon="ArrowRight" icon-position="right">
+          <BaseButton
+            v-if="page.primaryAction"
+            :icon="ArrowRight"
+            icon-position="right"
+            @click="runAction(page.primaryAction)"
+          >
             {{ page.primaryAction }}
           </BaseButton>
         </div>
@@ -75,10 +126,15 @@ const page = computed(
               <BaseInput
                 v-for="field in page.formFields"
                 :key="field"
+                v-model="formValues[field]"
                 :label="field"
                 :placeholder="field"
                 :icon="field.toLowerCase().includes('qidir') ? Search : undefined"
               />
+            </div>
+            <div class="form-actions">
+              <BaseButton variant="secondary" @click="resetForm">Tozalash</BaseButton>
+              <BaseButton @click="saveForm">Saqlash</BaseButton>
             </div>
           </section>
 
@@ -91,7 +147,12 @@ const page = computed(
           </section>
 
           <section v-if="page.cards?.length" class="grid grid-3">
-            <BaseCard v-for="card in page.cards" :key="card.title" interactive>
+            <BaseCard
+              v-for="card in page.cards"
+              :key="card.title"
+              interactive
+              @click="selectedCard = card"
+            >
               <CheckCircle2 :size="22" :stroke-width="1.5" />
               <h2>{{ card.title }}</h2>
               <p>{{ card.text }}</p>
@@ -121,6 +182,18 @@ const page = computed(
         </aside>
       </div>
     </section>
+
+    <BaseModal
+      :open="Boolean(selectedCard)"
+      :title="selectedCard?.title ?? page.title"
+      @close="selectedCard = null"
+    >
+      <p>{{ selectedCard?.text }}</p>
+      <div class="form-actions">
+        <BaseButton variant="secondary" @click="selectedCard = null">Bekor qilish</BaseButton>
+        <BaseButton @click="runAction(selectedCard?.title)">Davom etish</BaseButton>
+      </div>
+    </BaseModal>
   </RoleShell>
 </template>
 
@@ -225,6 +298,13 @@ h1 {
   position: sticky;
   top: 84px;
   height: max-content;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
 }
 
 @media (max-width: 980px) {

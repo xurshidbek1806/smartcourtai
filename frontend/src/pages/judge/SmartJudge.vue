@@ -7,6 +7,7 @@ import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseCard from '@/components/ui/BaseCard.vue';
 import BaseInput from '@/components/ui/BaseInput.vue';
 import { judgeNav } from '@/data/navigation';
+import { getDemoCase, updateDemoCase } from '@/services/demoCase';
 import { useUi } from '@/stores/ui';
 import { streamSmartJudge } from '@/lib/api';
 
@@ -248,6 +249,9 @@ onBeforeUnmount(() => {
             <p>{{ p.outcome }}<span v-if="p.score"> · {{ Math.round(p.score * 100) }}% mos</span></p>
           </div>
         </BaseCard>
+        <RouterLink to="/oversight/auto-exec">
+          <BaseButton>AutoExec’ga o‘tish</BaseButton>
+        </RouterLink>
       </aside>
     </section>
   </RoleShell>
@@ -340,6 +344,15 @@ h1 {
 .empty {
   color: var(--gray-500);
   font-size: 14px;
+}
+
+.human-review {
+  margin: 14px 0;
+  border-left: 3px solid var(--stat-blue);
+  background: var(--stat-blue-soft);
+  padding: 12px;
+  color: var(--gray-700);
+  line-height: 1.5;
 }
 
 .cursor {

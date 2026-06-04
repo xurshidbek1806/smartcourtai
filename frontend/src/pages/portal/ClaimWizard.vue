@@ -20,10 +20,12 @@ import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseCard from '@/components/ui/BaseCard.vue';
 import BaseInput from '@/components/ui/BaseInput.vue';
 import { portalNav } from '@/data/navigation';
+import { getDemoCase, updateDemoCase } from '@/services/demoCase';
 import { useUi } from '@/stores/ui';
 import { validateClaim } from '@/lib/api';
 
 const ui = useUi();
+const demoCase = ref(getDemoCase());
 const step = ref(1);
 
 const form = reactive({
@@ -69,6 +71,19 @@ const next = () => (step.value = Math.min(5, step.value + 1));
 const prev = () => (step.value = Math.max(1, step.value - 1));
 
 const saveDraft = () => {
+  window.localStorage.setItem(
+    'smartcourt-claim-draft',
+    JSON.stringify({
+      step: step.value,
+      selectedType: selectedType.value,
+      partyType: partyType.value,
+      claimant: claimant.value,
+      respondent: respondent.value,
+      amount: amount.value,
+      claimTitle: claimTitle.value,
+      uploadedFiles: uploadedFiles.value
+    })
+  );
   ui.pushToast({
     type: 'success',
     title: 'Qoralama saqlandi',
@@ -151,6 +166,15 @@ const runClaimValidator = async () => {
 
 const handleNext = () => {
   if (step.value === 5) {
+    demoCase.value = updateDemoCase({
+      title: claimTitle.value,
+      disputeType: selectedType.value,
+      claimant: claimant.value,
+      respondent: respondent.value,
+      amount: amount.value,
+      evidence: uploadedFiles.value.map((file) => ({ name: file.name, status: file.result })),
+      decision: { status: 'Sudga qabul qilindi', executionStatus: 'Ijroga yuborilmagan' }
+    });
     ui.pushToast({
       type: 'success',
       title: 'Ariza yuborildi',
@@ -190,6 +214,15 @@ const handleNext = () => {
 
       <div class="wizard-body">
         <main class="panel">
+          <BaseCard v-if="demoCase.validation?.score" variant="filled" class="validator-summary">
+            <div>
+              <p class="eyebrow">ClaimValidator natijasi</p>
+              <h3>{{ demoCase.validation.score }}% tayyor • {{ demoCase.jurisdiction }}</h3>
+            </div>
+            <RouterLink to="/portal/claim-validator">
+              <BaseButton variant="secondary" size="sm">Tahlilni ko‘rish</BaseButton>
+            </RouterLink>
+          </BaseCard>
           <template v-if="step === 1">
             <h2>1. Nizo turini tanlang</h2>
             <div class="grid grid-2 choice-grid">
@@ -234,7 +267,9 @@ const handleNext = () => {
               <BaseInput v-model="form.address" label="Manzil" placeholder="Toshkent, Yunusobod" />
               <BaseInput v-model="form.phone" label="Telefon" placeholder="+998 90 000 00 00" />
             </div>
-            <BaseButton variant="secondary" :icon="Plus">Yana tomon qo‘shish</BaseButton>
+            <BaseButton variant="secondary" :icon="Plus" @click="addParty"
+              >Yana tomon qo‘shish</BaseButton
+            >
           </template>
 
           <template v-else-if="step === 3">
@@ -363,8 +398,10 @@ const handleNext = () => {
                 muvaffaqiyatli yechilgan.
               </p>
               <div class="toolbar">
-                <BaseButton variant="secondary">Mediatsiyani sinab ko‘rish</BaseButton>
-                <BaseButton>Sudga yuborish</BaseButton>
+                <BaseButton variant="secondary" @click="tryMediation"
+                  >Mediatsiyani sinab ko‘rish</BaseButton
+                >
+                <BaseButton @click="handleNext">Sudga yuborish</BaseButton>
               </div>
             </BaseCard>
           </template>
@@ -481,6 +518,18 @@ h2 {
 .choice-grid,
 .form-grid {
   margin: 20px 0;
+}
+
+.validator-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.validator-summary h3 {
+  margin: 4px 0 0;
 }
 
 .selected {
@@ -674,6 +723,11 @@ textarea {
 
   .stepper {
     grid-template-columns: 1fr;
+  }
+
+  .validator-summary {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 </style>
