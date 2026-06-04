@@ -1,5 +1,4 @@
 import {
-  AudioLines,
   Bot,
   BrainCircuit,
   FileCheck,
@@ -11,44 +10,71 @@ import {
   Lock,
   Mic,
   Network,
+  ScanSearch,
   Scale,
   ShieldCheck
 } from 'lucide-vue-next';
 
 export const modules = [
-  { name: 'JustiScribe', icon: Mic, text: 'Sud majlislarini real-time stenogramma qiladi.' },
+  {
+    name: 'ClaimValidator',
+    icon: ScanSearch,
+    text: 'Arizani tekshiradi, kamchiliklarni topadi va to‘g‘ri sudga yo‘naltiradi.',
+    to: '/portal/claim-validator'
+  },
+  {
+    name: 'MediatoBot',
+    icon: Scale,
+    text: 'Sudgacha kelishuv ehtimolini tahlil qiladi.',
+    to: '/portal/mediation'
+  },
   {
     name: 'LexPredictor',
     icon: BrainCircuit,
-    text: 'Pretsedentlar asosida natija ehtimolini baholaydi.'
+    text: 'Pretsedentlar asosida natija ehtimolini baholaydi.',
+    to: '/judge/ai-tools/lex-predictor'
+  },
+  {
+    name: 'EvidenceAnalyzer',
+    icon: FileSearch,
+    text: 'Raqamli dalillarni tekshiradi va huquqiy faktlarni ajratadi.',
+    to: '/judge/ai-tools/evidence-analyzer'
+  },
+  {
+    name: 'JustiScribe',
+    icon: Mic,
+    text: 'Sud majlislarini real-time stenogramma qiladi.',
+    to: '/judge/hearing/live'
+  },
+  {
+    name: 'SentencAI',
+    icon: FileCheck,
+    text: 'Jazo proporsionalligini hisoblaydi.',
+    to: '/judge/ai-tools/sentencai'
   },
   {
     name: 'SmartJudge',
     icon: Gavel,
-    text: 'Qaror qoralamasini qonun moddalari bilan tayyorlaydi.'
+    text: 'Qaror qoralamasini qonun moddalari bilan tayyorlaydi.',
+    to: '/judge/ai-tools/smart-judge'
   },
   {
-    name: 'EvidentAI',
-    icon: FileSearch,
-    text: 'Dalillarni tekshiradi va huquqiy faktlarni ajratadi.'
+    name: 'CorruptAlert',
+    icon: Network,
+    text: 'Aloqalar grafidan xavf signallarini topadi.',
+    to: '/oversight/corruption/graph'
   },
-  { name: 'MediatoBot', icon: Scale, text: 'Sudgacha kelishuv ehtimolini tahlil qiladi.' },
   {
     name: 'AnonimusLaw',
     icon: Fingerprint,
-    text: 'Shaxsiy ma’lumotlarni nashrdan oldin yashiradi.'
+    text: 'Shaxsiy ma’lumotlarni nashrdan oldin yashiradi.',
+    to: '/oversight/anonymization'
   },
-  { name: 'CorruptAlert', icon: Network, text: 'Aloqalar grafidan xavf signallarini topadi.' },
-  { name: 'SentencAI', icon: FileCheck, text: 'Jazo proporsionalligini hisoblaydi.' },
   {
-    name: 'SecureCourt',
+    name: 'AutoExec',
     icon: ShieldCheck,
-    text: 'Audit, shifrlash va ruxsatlarni nazorat qiladi.'
-  },
-  {
-    name: 'AudioVault',
-    icon: AudioLines,
-    text: 'Yozuvlar, diarizatsiya va waveform arxivini yuritadi.'
+    text: 'Qarorni MIB, bank va FHDYo tizimlari orqali avtomatik ijroga yuboradi.',
+    to: '/oversight/auto-exec'
   }
 ];
 

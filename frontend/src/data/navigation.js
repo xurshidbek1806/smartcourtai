@@ -18,6 +18,7 @@ import {
   MessageSquare,
   Network,
   ScanFace,
+  ScanSearch,
   Settings,
   Shield,
   Sparkles,
@@ -25,6 +26,7 @@ import {
 } from 'lucide-vue-next';
 
 export const marketingLinks = [
+  { label: 'Muammolar', to: '/problems' },
   { label: 'Features', to: '/features' },
   { label: 'Modules', to: '/modules' },
   { label: 'Security', to: '/security' },
@@ -33,6 +35,7 @@ export const marketingLinks = [
 
 export const portalNav = [
   { label: 'Dashboard', to: '/portal/dashboard', icon: Home },
+  { label: 'ClaimValidator', to: '/portal/claim-validator', icon: ScanSearch },
   { label: 'Arizalarim', to: '/portal/claims', icon: FileText, badge: '3' },
   { label: 'Yangi ariza', to: '/portal/claims/new', icon: Folder },
   { label: 'Mediatsiya', to: '/portal/mediation', icon: Handshake },
@@ -69,6 +72,7 @@ export const adminNav = [
 
 export const oversightNav = [
   { label: 'Dashboard', to: '/oversight/dashboard', icon: Home },
+  { label: 'AutoExec', to: '/oversight/auto-exec', icon: Activity },
   { label: 'Qarorlar', to: '/oversight/decisions', icon: Gavel },
   { label: 'Ijro nazorati', to: '/oversight/execution', icon: Archive },
   { label: 'CorruptAlert', to: '/oversight/corruption/alerts', icon: Shield, badge: '5' },

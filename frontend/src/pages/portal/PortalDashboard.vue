@@ -1,5 +1,14 @@
 <script setup>
-import { CalendarDays, CreditCard, FileText, Plus, Scale, Send, Sparkles } from 'lucide-vue-next';
+import {
+  CalendarDays,
+  CreditCard,
+  FileText,
+  Plus,
+  Scale,
+  ScanSearch,
+  Send,
+  Sparkles
+} from 'lucide-vue-next';
 
 import RoleShell from '@/layouts/RoleShell.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
@@ -41,6 +50,11 @@ const scoreTone = (score) => {
         <div class="summary-actions">
           <RouterLink to="/portal/claims/new"
             ><BaseButton :icon="Plus">Yangi ariza</BaseButton></RouterLink
+          >
+          <RouterLink to="/portal/claim-validator"
+            ><BaseButton variant="secondary" :icon="ScanSearch"
+              >Arizani tekshirish</BaseButton
+            ></RouterLink
           >
           <RouterLink to="/portal/ai-assistant"
             ><BaseButton variant="secondary" :icon="Sparkles">AI yordam</BaseButton></RouterLink
@@ -110,6 +124,15 @@ const scoreTone = (score) => {
                 >Mediatsiya</BaseButton
               ></RouterLink
             >
+          </section>
+
+          <section class="panel compact-panel">
+            <ScanSearch :size="22" :stroke-width="1.5" />
+            <h2>ClaimValidator</h2>
+            <p>Arizani yuborishdan oldin kamchiliklar va yurisdiksiyani tekshiring.</p>
+            <RouterLink to="/portal/claim-validator">
+              <BaseButton variant="secondary" size="sm">Tekshirish</BaseButton>
+            </RouterLink>
           </section>
 
           <section class="panel">

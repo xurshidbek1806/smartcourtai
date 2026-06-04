@@ -18,12 +18,18 @@ import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseCard from '@/components/ui/BaseCard.vue';
 import BaseInput from '@/components/ui/BaseInput.vue';
 import { portalNav } from '@/data/navigation';
+import { getDemoCase, updateDemoCase } from '@/services/demoCase';
 import { useUi } from '@/stores/ui';
 
 const ui = useUi();
+const demoCase = ref(getDemoCase());
 const step = ref(1);
-const selectedType = ref('Mehnat nizosi');
+const selectedType = ref(demoCase.value.disputeType);
 const partyType = ref('Jismoniy shaxs');
+const claimant = ref(demoCase.value.claimant);
+const respondent = ref(demoCase.value.respondent);
+const amount = ref(demoCase.value.amount);
+const claimTitle = ref(demoCase.value.title);
 const uploadedFiles = ref([
   {
     id: 1,
@@ -53,6 +59,10 @@ const saveDraft = () => {
       step: step.value,
       selectedType: selectedType.value,
       partyType: partyType.value,
+      claimant: claimant.value,
+      respondent: respondent.value,
+      amount: amount.value,
+      claimTitle: claimTitle.value,
       uploadedFiles: uploadedFiles.value
     })
   );
@@ -98,6 +108,15 @@ const removeFile = (id) => {
 };
 const handleNext = () => {
   if (step.value === 5) {
+    demoCase.value = updateDemoCase({
+      title: claimTitle.value,
+      disputeType: selectedType.value,
+      claimant: claimant.value,
+      respondent: respondent.value,
+      amount: amount.value,
+      evidence: uploadedFiles.value.map((file) => ({ name: file.name, status: file.result })),
+      decision: { status: 'Sudga qabul qilindi', executionStatus: 'Ijroga yuborilmagan' }
+    });
     ui.pushToast({
       type: 'success',
       title: 'Ariza yuborildi',
@@ -137,6 +156,15 @@ const handleNext = () => {
 
       <div class="wizard-body">
         <main class="panel">
+          <BaseCard v-if="demoCase.validation?.score" variant="filled" class="validator-summary">
+            <div>
+              <p class="eyebrow">ClaimValidator natijasi</p>
+              <h3>{{ demoCase.validation.score }}% tayyor • {{ demoCase.jurisdiction }}</h3>
+            </div>
+            <RouterLink to="/portal/claim-validator">
+              <BaseButton variant="secondary" size="sm">Tahlilni ko‘rish</BaseButton>
+            </RouterLink>
+          </BaseCard>
           <template v-if="step === 1">
             <h2>1. Nizo turini tanlang</h2>
             <div class="grid grid-2 choice-grid">
@@ -172,7 +200,8 @@ const handleNext = () => {
               </BaseButton>
             </div>
             <div class="grid grid-2 form-grid">
-              <BaseInput label="F.I.Sh / tashkilot" placeholder="Akramov Dilshod" />
+              <BaseInput v-model="claimant" label="Da’vogar" placeholder="Akramov Dilshod" />
+              <BaseInput v-model="respondent" label="Javobgar" placeholder="Orion LLC" />
               <BaseInput label="PINFL / INN" placeholder="12345678901234" />
               <BaseInput label="Manzil" placeholder="Toshkent, Yunusobod" />
               <BaseInput label="Telefon" placeholder="+998 90 000 00 00" />
@@ -185,13 +214,17 @@ const handleNext = () => {
           <template v-else-if="step === 3">
             <h2>3. Nizo tafsilotlari</h2>
             <div class="grid form-grid">
-              <BaseInput label="Sarlavha" placeholder="Mehnat kompensatsiyasi bo‘yicha da’vo" />
+              <BaseInput
+                v-model="claimTitle"
+                label="Sarlavha"
+                placeholder="Mehnat kompensatsiyasi bo‘yicha da’vo"
+              />
               <label class="textarea">
                 <span>Nizo mohiyati</span>
                 <textarea rows="7" placeholder="Kamida 200 belgi..." />
               </label>
               <div class="grid grid-2">
-                <BaseInput label="Nizo summasi" placeholder="50 000 000" />
+                <BaseInput v-model="amount" label="Nizo summasi" placeholder="50 000 000" />
                 <BaseInput label="Voqea sanasi" placeholder="15.01.2026" :icon="Calendar" />
               </div>
             </div>
@@ -351,6 +384,18 @@ h2 {
   margin: 20px 0;
 }
 
+.validator-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.validator-summary h3 {
+  margin: 4px 0 0;
+}
+
 .selected {
   outline: 2px solid var(--gray-900);
 }
@@ -467,6 +512,11 @@ textarea {
 
   .stepper {
     grid-template-columns: 1fr;
+  }
+
+  .validator-summary {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 </style>

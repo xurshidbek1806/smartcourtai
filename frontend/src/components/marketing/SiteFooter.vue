@@ -7,6 +7,7 @@
       </div>
       <div>
         <h3>Mahsulot</h3>
+        <a href="/problems">Muammolar</a>
         <a href="/modules">Modullar</a>
         <a href="/security">Xavfsizlik</a>
         <a href="/architecture">Arxitektura</a>

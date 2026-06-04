@@ -5,6 +5,7 @@ import {
   BarChart3,
   FileCheck,
   Network,
+  Play,
   ShieldAlert
 } from 'lucide-vue-next';
 
@@ -47,7 +48,12 @@ const riskSignals = [
           <h1>3,842 ta qaror monitoringda</h1>
           <p>Ijro, reestr, anonimlashtirish va risk signallari.</p>
         </div>
-        <BaseButton :icon="FileCheck">Hisobot yaratish</BaseButton>
+        <div class="summary-actions">
+          <RouterLink to="/oversight/auto-exec">
+            <BaseButton :icon="Play">AutoExec</BaseButton>
+          </RouterLink>
+          <BaseButton variant="secondary" :icon="FileCheck">Hisobot yaratish</BaseButton>
+        </div>
       </header>
 
       <section class="metrics">
@@ -80,6 +86,7 @@ const riskSignals = [
               <Archive :size="22" :stroke-width="1.5" />
               <h3>Navbat</h3>
               <p>184 ta qaror ijroga yuborilishi kutilmoqda.</p>
+              <RouterLink to="/oversight/auto-exec">AutoExec’ni ochish</RouterLink>
             </BaseCard>
             <BaseCard class="workflow-card" interactive>
               <Network :size="22" :stroke-width="1.5" />
@@ -134,6 +141,12 @@ const riskSignals = [
   border-radius: var(--radius-lg);
   background: var(--color-white);
   padding: 18px;
+}
+
+.summary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 h1,

@@ -21,7 +21,7 @@ export const marketingPages = {
     eyebrow: 'Imkoniyatlar',
     title: 'Sud jarayonlarini AI bilan tezlashtirish.',
     description:
-      'JustiScribe, LexPredictor, SmartJudge, EvidentAI va MediatoBot bir oqimda ishlaydi.',
+      'ClaimValidator, MediatoBot, LexPredictor, EvidenceAnalyzer, JustiScribe va SmartJudge bir oqimda ishlaydi.',
     primaryAction: "Demo ko'rish",
     cards: [
       {
@@ -41,16 +41,48 @@ export const marketingPages = {
     title: 'SmartCourt AI modullari.',
     description: 'TZda belgilangan 10 modul: stenogramma, prognoz, qaror, dalil va nazorat.',
     cards: [
-      { title: 'JustiScribe', text: 'Sud majlislarining real-time stenogrammasi.' },
-      { title: 'LexPredictor', text: 'Pretsedent qidiruv va yutish ehtimoli.' },
-      { title: 'SmartJudge', text: 'Qaror qoralamasi generatori.' },
-      { title: 'EvidentAI', text: 'Dalillarni AI tahlil qilish.' },
-      { title: 'MediatoBot', text: 'Sudgacha mediatsiya tavsiyalari.' },
-      { title: 'AnonimusLaw', text: 'Qarorlarni anonimlashtirish.' },
-      { title: 'CorruptAlert', text: 'Aloqalar grafi va xavf signallari.' },
-      { title: 'SentencAI', text: 'Jazo proporsionalligi kalkulyatori.' },
-      { title: 'SecureCourt', text: 'Audit, ruxsat va shifrlash nazorati.' },
-      { title: 'AudioVault', text: 'Audio yozuvlar va waveform arxivi.' }
+      {
+        title: 'ClaimValidator',
+        text: 'Arizani tekshirish va sudga yo‘naltirish.',
+        to: '/portal/claim-validator'
+      },
+      { title: 'MediatoBot', text: 'Sudgacha mediatsiya tavsiyalari.', to: '/portal/mediation' },
+      {
+        title: 'LexPredictor',
+        text: 'Pretsedent qidiruv va yutish ehtimoli.',
+        to: '/judge/ai-tools/lex-predictor'
+      },
+      {
+        title: 'EvidenceAnalyzer',
+        text: 'Dalillarni AI tahlil qilish.',
+        to: '/judge/ai-tools/evidence-analyzer'
+      },
+      {
+        title: 'JustiScribe',
+        text: 'Sud majlislarining real-time stenogrammasi.',
+        to: '/judge/hearing/live'
+      },
+      {
+        title: 'SentencAI',
+        text: 'Jazo proporsionalligi kalkulyatori.',
+        to: '/judge/ai-tools/sentencai'
+      },
+      {
+        title: 'SmartJudge',
+        text: 'Qaror qoralamasi generatori.',
+        to: '/judge/ai-tools/smart-judge'
+      },
+      {
+        title: 'CorruptAlert',
+        text: 'Aloqalar grafi va xavf signallari.',
+        to: '/oversight/corruption/graph'
+      },
+      {
+        title: 'AnonimusLaw',
+        text: 'Qarorlarni anonimlashtirish.',
+        to: '/oversight/anonymization'
+      },
+      { title: 'AutoExec', text: 'Qarorlarni avtomatik ijro etish.', to: '/oversight/auto-exec' }
     ]
   },
   architecture: {
@@ -90,7 +122,7 @@ export const marketingPages = {
     description: 'B2G xarid, modullar bo‘yicha aktivatsiya va on-premise support modeli.',
     cards: [
       { title: 'Core', text: 'Landing, portal, judge workspace va audit bazasi.' },
-      { title: 'AI Suite', text: 'SmartJudge, LexPredictor, JustiScribe va EvidentAI.' },
+      { title: 'AI Suite', text: 'SmartJudge, LexPredictor, JustiScribe va EvidenceAnalyzer.' },
       { title: 'Oversight', text: 'CorruptAlert, ijro nazorati va ochiq reestr.' }
     ]
   },
@@ -486,7 +518,7 @@ export const judgePages = {
   '/judge/cases/:id/evidence': {
     eyebrow: 'Dalillar',
     title: 'Dalillar tahlili',
-    description: 'EvidentAI orqali dalillarni ko‘rish, preview va fakt ajratish.',
+    description: 'EvidenceAnalyzer orqali dalillarni ko‘rish, preview va fakt ajratish.',
     table: {
       columns: ['Dalil', 'Turi', 'AI xulosa', 'Holat'],
       rows: [

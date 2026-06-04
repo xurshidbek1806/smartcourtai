@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 import GlassNav from '@/components/marketing/GlassNav.vue';
 import SiteFooter from '@/components/marketing/SiteFooter.vue';
@@ -14,6 +14,7 @@ import { runDemoAction } from '@/services/demoActions';
 import { useUi } from '@/stores/ui';
 
 const route = useRoute();
+const router = useRouter();
 const ui = useUi();
 const pageKey = computed(() => String(route.name ?? 'features'));
 const page = computed(() => marketingPages[pageKey.value] ?? marketingPages.features);
@@ -49,6 +50,14 @@ const runAction = (label) => {
   if (page.value.formFields?.length) saveForm();
   runDemoAction({ label, ui, route, payload: formValues.value });
 };
+
+const openCard = (item) => {
+  if (item.to) {
+    router.push(item.to);
+    return;
+  }
+  selectedCard.value = item;
+};
 </script>
 
 <template>
@@ -67,12 +76,7 @@ const runAction = (label) => {
     </div>
 
     <div v-if="page.cards?.length" class="grid grid-3 cards">
-      <BaseCard
-        v-for="item in page.cards"
-        :key="item.title"
-        interactive
-        @click="selectedCard = item"
-      >
+      <BaseCard v-for="item in page.cards" :key="item.title" interactive @click="openCard(item)">
         <h2>{{ item.title }}</h2>
         <p>{{ item.text }}</p>
       </BaseCard>
