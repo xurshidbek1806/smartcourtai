@@ -27,11 +27,11 @@ import {
 } from 'lucide-vue-next';
 
 export const marketingLinks = [
-  { label: 'Muammolar', to: '/problems' },
-  { label: 'Features', to: '/features' },
-  { label: 'Modules', to: '/modules' },
-  { label: 'Security', to: '/security' },
-  { label: 'About', to: '/about' }
+  { label: 'Muammolar', to: '/#problems' },
+  { label: 'Features', to: '/#features' },
+  { label: 'Modules', to: '/#modules' },
+  { label: 'Security', to: '/#security' },
+  { label: 'About', to: '/#about' }
 ];
 
 export const portalNav = [
