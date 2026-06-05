@@ -86,6 +86,10 @@ services:
       - "8000:8000"
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    # GPU passthrough for faster-whisper (CUDA). Whisper time-shares the
+    # 6 GB card with the host Ollama LLM: Whisper auto-unloads when idle and
+    # hearing insights run on CPU, so they don't both occupy VRAM at once.
+    gpus: all
     volumes:
       - ./app:/code/app
       - ./storage:/code/storage

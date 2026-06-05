@@ -38,7 +38,12 @@ async def _quick_insight(text: str) -> str | None:
     if len(text.strip()) < 8:
         return None
     try:
-        out = await llm.chat(text, system=INSIGHT_SYSTEM, temperature=0.1)
+        # num_gpu=0 → insight runs on CPU. During a hearing the GPU is busy
+        # with Whisper; on 6 GB they can't both fit, so we keep this off the
+        # GPU. It's async and non-critical, so CPU latency is acceptable.
+        out = await llm.chat(
+            text, system=INSIGHT_SYSTEM, temperature=0.1, num_predict=80, num_gpu=0
+        )
         out = out.strip()
         if out.lower().startswith("yo'q") or out.lower() == "yoq":
             return None

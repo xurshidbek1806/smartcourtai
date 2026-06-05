@@ -47,13 +47,19 @@ class OllamaClient:
         model: Optional[str] = None,
         format_json: bool = False,
         num_predict: Optional[int] = None,
+        num_gpu: Optional[int] = None,
     ) -> str:
-        """Single-shot completion (non-streaming)."""
+        """Single-shot completion (non-streaming).
+
+        num_gpu: per-call GPU-layer override. Pass 0 to force CPU (used for
+        live-hearing insights so they don't fight Whisper for the GPU).
+        """
         messages = []
         if system:
             messages.append({"role": "system", "content": system})
         messages.append({"role": "user", "content": prompt})
 
+        gpu_layers = num_gpu if num_gpu is not None else settings.LLM_NUM_GPU
         options = {
             "temperature": temperature
             if temperature is not None
@@ -61,8 +67,8 @@ class OllamaClient:
             "num_ctx": settings.LLM_NUM_CTX,
             "repeat_penalty": 1.15,
         }
-        if settings.LLM_NUM_GPU >= 0:
-            options["num_gpu"] = settings.LLM_NUM_GPU
+        if gpu_layers >= 0:
+            options["num_gpu"] = gpu_layers
         if num_predict is not None:
             options["num_predict"] = num_predict
 

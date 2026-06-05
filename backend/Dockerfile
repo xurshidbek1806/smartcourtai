@@ -19,6 +19,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
+# CUDA runtime libs for faster-whisper GPU (ctranslate2 needs cuDNN 9 + cuBLAS).
+# Installed as pip wheels so we don't need a heavy CUDA base image.
+RUN pip install nvidia-cublas-cu12 "nvidia-cudnn-cu12==9.*"
+
+# Let the dynamic linker find the pip-installed CUDA .so files.
+ENV LD_LIBRARY_PATH=/usr/local/lib/python3.11/site-packages/nvidia/cublas/lib:/usr/local/lib/python3.11/site-packages/nvidia/cudnn/lib:${LD_LIBRARY_PATH}
+
 COPY . .
 
 # Create storage dirs for uploads / generated files

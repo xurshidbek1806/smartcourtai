@@ -1,9 +1,13 @@
-"""JustiScribe — speech-to-text via faster-whisper (CPU, on-premise).
+"""JustiScribe — speech-to-text via faster-whisper (GPU/CPU, on-premise).
 
-The Whisper model is lazy-loaded on first use to keep startup fast and memory
-low until transcription is actually needed.
+The Whisper model is lazy-loaded on first use. On a 6 GB GPU it time-shares
+VRAM with the LLM: it loads on CUDA when transcription is needed and unloads
+itself after a short idle period so the LLM can reclaim the GPU. If CUDA is
+unavailable or out of memory, it transparently falls back to CPU.
 """
 import asyncio
+import threading
+import time
 from typing import Optional
 
 from loguru import logger
@@ -11,24 +15,81 @@ from loguru import logger
 from app.core.config import settings
 
 _model = None  # lazy singleton
+_model_device = None  # which device the loaded model is actually on
+_last_used = 0.0
+_lock = threading.Lock()
+_unloader_started = False
+
+
+# On CPU fallback we use a smaller model so the hearing stays real-time
+# (medium on CPU is 13-21 s/clip; base is ~2 s).
+_CPU_FALLBACK_MODEL = "base"
+
+
+def _build_model(device: str, compute_type: str, model_name: Optional[str] = None):
+    from faster_whisper import WhisperModel
+
+    name = model_name or settings.WHISPER_MODEL
+    logger.info(f"Loading Whisper model '{name}' ({device}/{compute_type})...")
+    m = WhisperModel(name, device=device, compute_type=compute_type)
+    logger.info(f"Whisper model '{name}' loaded on {device}.")
+    return m
 
 
 def _load_model():
-    global _model
-    if _model is None:
-        from faster_whisper import WhisperModel
+    """Load the model, falling back GPU→CPU if CUDA can't be used."""
+    global _model, _model_device
+    if _model is not None:
+        return _model
 
-        logger.info(
-            f"Loading Whisper model '{settings.WHISPER_MODEL}' "
-            f"({settings.WHISPER_DEVICE}/{settings.WHISPER_COMPUTE_TYPE})..."
-        )
-        _model = WhisperModel(
-            settings.WHISPER_MODEL,
-            device=settings.WHISPER_DEVICE,
-            compute_type=settings.WHISPER_COMPUTE_TYPE,
-        )
-        logger.info("Whisper model loaded.")
+    device = settings.WHISPER_DEVICE
+    compute = settings.WHISPER_COMPUTE_TYPE
+    try:
+        _model = _build_model(device, compute)
+        _model_device = device
+    except Exception as exc:  # noqa: BLE001
+        if device != "cpu":
+            logger.warning(
+                f"Whisper CUDA load failed ({exc}); falling back to CPU "
+                f"(model '{_CPU_FALLBACK_MODEL}' for real-time speed)."
+            )
+            _model = _build_model("cpu", "int8", model_name=_CPU_FALLBACK_MODEL)
+            _model_device = "cpu"
+        else:
+            raise
+    _start_unloader()
     return _model
+
+
+def _unload_model():
+    """Free the model (and its VRAM) so the LLM can use the GPU."""
+    global _model, _model_device
+    with _lock:
+        if _model is not None:
+            logger.info(f"Whisper idle → unloading from {_model_device} (freeing VRAM)")
+            _model = None
+            _model_device = None
+    import gc
+
+    gc.collect()
+
+
+def _start_unloader():
+    """Background thread that unloads the model after idle timeout."""
+    global _unloader_started
+    if _unloader_started or settings.WHISPER_IDLE_UNLOAD_S <= 0:
+        return
+    _unloader_started = True
+
+    def _loop():
+        while True:
+            time.sleep(10)
+            if _model is not None and _last_used > 0:
+                idle = time.time() - _last_used
+                if idle >= settings.WHISPER_IDLE_UNLOAD_S:
+                    _unload_model()
+
+    threading.Thread(target=_loop, daemon=True, name="whisper-unloader").start()
 
 
 def _is_garbage(text: str) -> bool:
@@ -98,17 +159,38 @@ def _run_whisper(model, audio_path: str, resolved_lang: Optional[str], use_vad: 
     return list(segments), info
 
 
+def _is_oom(exc: Exception) -> bool:
+    s = str(exc).lower()
+    return "out of memory" in s or "cuda" in s or "cublas" in s or "cudnn" in s
+
+
 def _transcribe_sync(audio_path: str, language: Optional[str]) -> dict:
+    global _model, _model_device, _last_used
     model = _load_model()
     resolved_lang = _resolve_language(language)
+    _last_used = time.time()
 
     # First pass WITH VAD (trims silence/noise). If it kills everything —
     # which happens on quiet mics or short webm/opus clips — retry WITHOUT
     # VAD so genuine speech isn't silently dropped.
-    raw, info = _run_whisper(model, audio_path, resolved_lang, use_vad=True)
+    try:
+        raw, info = _run_whisper(model, audio_path, resolved_lang, use_vad=True)
+    except Exception as exc:  # noqa: BLE001
+        # CUDA OOM — the LLM probably grabbed the GPU. Drop to CPU and retry
+        # so the hearing keeps working (a bit slower) instead of erroring.
+        if _model_device != "cpu" and _is_oom(exc):
+            logger.warning(f"Whisper CUDA OOM ({exc}); reloading on CPU ('{_CPU_FALLBACK_MODEL}')")
+            _unload_model()
+            _model = _build_model("cpu", "int8", model_name=_CPU_FALLBACK_MODEL)
+            _model_device = "cpu"
+            model = _model
+            raw, info = _run_whisper(model, audio_path, resolved_lang, use_vad=True)
+        else:
+            raise
     if not raw:
         logger.info("Whisper: VAD produced 0 segments → retrying without VAD")
         raw, info = _run_whisper(model, audio_path, resolved_lang, use_vad=False)
+    _last_used = time.time()
 
     logger.info(
         f"Whisper: {len(raw)} raw segments "

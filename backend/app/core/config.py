@@ -55,13 +55,16 @@ class Settings(BaseSettings):
     NEO4J_USER: str = "neo4j"
     NEO4J_PASSWORD: str = "smartcourt_graph"
 
-    # Whisper. 'base' is the only model that keeps up with live 5-second
-    # clips on a CPU (~2 s/clip); 'small'/'medium' run 13-60 s/clip here and
-    # the queue collapses. Bump to 'medium' only on a GPU or strong CPU.
-    WHISPER_MODEL: str = "base"
-    WHISPER_DEVICE: str = "cpu"
-    WHISPER_COMPUTE_TYPE: str = "int8"
+    # Whisper. On GPU (cuda/float16) 'medium' does a 5 s clip in ~1-2 s with
+    # good Uzbek accuracy. On CPU only 'base' keeps up (~2 s) but its Uzbek is
+    # poor. The service auto-falls back to CPU if CUDA isn't available/OOMs.
+    WHISPER_MODEL: str = "medium"
+    WHISPER_DEVICE: str = "cuda"
+    WHISPER_COMPUTE_TYPE: str = "float16"
     WHISPER_LANGUAGE: str = "uz"
+    # Unload the Whisper model from VRAM after this many idle seconds so the
+    # LLM can use the GPU between hearings (6 GB can't hold both at once).
+    WHISPER_IDLE_UNLOAD_S: int = 45
 
     # Storage
     STORAGE_DIR: str = "./storage"
