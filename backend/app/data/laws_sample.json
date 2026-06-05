@@ -1,6 +1,15 @@
 [
   {
     "code": "FK",
+    "code_name": "Fuqarolik kodeksi",
+    "article": "14",
+    "title": "Yetkazilgan zararning o'rnini qoplash",
+    "text": "Huquqi buzilgan shaxs, agar qonun hujjatlarida yoki shartnomada zararning o'rnini qoplash boshqacha hajmda nazarda tutilgan bo'lmasa, o'ziga yetkazilgan zararning o'rni to'liq qoplanishini talab qilishi mumkin. Zarar deganda huquqi buzilgan shaxsning sarflagan yoki sarflashi lozim bo'lgan xarajatlari, mol-mulkidan mahrum bo'lishi yoki shikastlanishi (real zarar) tushuniladi.",
+    "dispute_type": "civil"
+  },
+  {
+    "code": "FK",
+    "code_name": "Fuqarolik kodeksi",
     "article": "234",
     "title": "Mulkdorlik huquqini himoya qilish (vindikatsiya da'vosi)",
     "text": "Mulkdor o'z mol-mulkini birovning qonunsiz egaligidan talab qilib olishga haqli. Mol-mulk vijdonan egallab oluvchidan haq evaziga olingan hollarda, mulkdor mol-mulkni mulkdordan yo'qolgan yoki o'g'irlangan bo'lsagina talab qilib olishi mumkin.",
@@ -8,6 +17,7 @@
   },
   {
     "code": "FK",
+    "code_name": "Fuqarolik kodeksi",
     "article": "324",
     "title": "Majburiyatlarni lozim darajada bajarish",
     "text": "Majburiyatlar majburiyat shartlariga, qonun hujjatlari talablariga muvofiq, bunday shartlar va talablar bo'lmaganda esa ish muomalasi odatlariga yoki odatda qo'yiladigan boshqa talablarga muvofiq lozim darajada bajarilishi kerak.",
@@ -15,6 +25,7 @@
   },
   {
     "code": "FK",
+    "code_name": "Fuqarolik kodeksi",
     "article": "333",
     "title": "Shartnomani bir tomonlama bajarishdan bosh tortish",
     "text": "Majburiyatni bir tomonlama bajarishdan bosh tortishga va uning shartlarini bir tomonlama o'zgartirishga, qonun hujjatlarida nazarda tutilgan hollar bundan mustasno, yo'l qo'yilmaydi.",
@@ -22,13 +33,23 @@
   },
   {
     "code": "FK",
-    "article": "14",
-    "title": "Yetkazilgan zararning o'rnini qoplash",
-    "text": "Huquqi buzilgan shaxs, agar qonun hujjatlarida yoki shartnomada zararning o'rnini qoplash boshqacha hajmda nazarda tutilgan bo'lmasa, o'ziga yetkazilgan zararning o'rni to'liq qoplanishini talab qilishi mumkin. Zarar deganda huquqi buzilgan shaxsning sarflagan yoki sarflashi lozim bo'lgan xarajatlari, mol-mulkidan mahrum bo'lishi yoki shikastlanishi (real zarar) tushuniladi.",
+    "code_name": "Fuqarolik kodeksi",
+    "article": "985",
+    "title": "Zarar yetkazganlik uchun javobgarlik (umumiy asoslar)",
+    "text": "Boshqa shaxsning shaxsiyatiga yoki mol-mulkiga yetkazilgan zarar, shuningdek yuridik shaxsga yetkazilgan zarar uni yetkazgan shaxs tomonidan to'liq hajmda qoplanishi kerak. Zarar yetkazgan shaxs, agar u zarar o'zining aybi bilan yetkazilmaganligini isbotlasa, javobgarlikdan ozod qilinadi.",
+    "dispute_type": "civil"
+  },
+  {
+    "code": "FK",
+    "code_name": "Fuqarolik kodeksi",
+    "article": "1000",
+    "title": "Ma'naviy zararni qoplash",
+    "text": "Fuqaroga uning shaxsiy nomulkiy huquqlarini buzuvchi yoki uning boshqa nomoddiy ne'matlariga tajovuz qiluvchi harakatlar (harakatsizliklar) bilan ma'naviy zarar (jismoniy yoki ruhiy iztiroblar) yetkazilgan bo'lsa, sud zarar yetkazuvchi shaxsga ma'naviy zararni pul shaklida qoplash majburiyatini yuklashi mumkin.",
     "dispute_type": "civil"
   },
   {
     "code": "MK",
+    "code_name": "Mehnat kodeksi",
     "article": "173",
     "title": "Mehnat shartnomasini bekor qilish asoslari",
     "text": "Mehnat shartnomasi tomonlarning kelishuvi, mehnat shartnomasi muddatining tugashi, xodimning tashabbusi, ish beruvchining tashabbusi va tomonlarning ixtiyoriga bog'liq bo'lmagan holatlar yuzaga kelganda bekor qilinishi mumkin.",
@@ -36,6 +57,7 @@
   },
   {
     "code": "MK",
+    "code_name": "Mehnat kodeksi",
     "article": "180",
     "title": "Ish beruvchi tashabbusi bilan mehnat shartnomasini bekor qilish",
     "text": "Ish beruvchi tashabbusi bilan mehnat shartnomasi tashkilot tugatilganda, xodimlar soni yoki shtati qisqartirilganda, xodim egallab turgan lavozimiga muvofiq kelmaganda bekor qilinishi mumkin. Xodim asossiz ravishda ishdan bo'shatilgan bo'lsa, u avvalgi ishiga tiklanadi.",
@@ -43,13 +65,31 @@
   },
   {
     "code": "MK",
+    "code_name": "Mehnat kodeksi",
     "article": "186",
     "title": "Ishga noqonuniy bo'shatilgan xodimni ishga tiklash",
     "text": "Noqonuniy ravishda ishdan bo'shatilgan yoki boshqa ishga o'tkazilgan xodim avvalgi ishiga tiklanishi lozim. Bunday xodimga majburiy ishda yurmagan davr uchun o'rtacha ish haqi to'lanadi.",
     "dispute_type": "labor"
   },
   {
+    "code": "MK",
+    "code_name": "Mehnat kodeksi",
+    "article": "100",
+    "title": "Yillik asosiy ta'til",
+    "text": "Har bir xodimga yillik asosiy mehnat ta'tili kamida 15 ish kuni miqdorida beriladi. Mehnat ta'tilini berish tartibi, davomiyligi va undan foydalanish shartlari ushbu Kodeks bilan tartibga solinadi.",
+    "dispute_type": "labor"
+  },
+  {
+    "code": "MK",
+    "code_name": "Mehnat kodeksi",
+    "article": "153",
+    "title": "Ish haqini to'lash muddatlari",
+    "text": "Ish haqi xodimga kamida har ikki haftada bir marta to'lanadi. Ish haqini o'z vaqtida to'lamaganlik uchun ish beruvchi xodimga kechiktirilgan har bir kun uchun belgilangan miqdorda peniya to'laydi.",
+    "dispute_type": "labor"
+  },
+  {
     "code": "OK",
+    "code_name": "Oila kodeksi",
     "article": "55",
     "title": "Er-xotinning umumiy mol-mulkini bo'lish",
     "text": "Er-xotinning umumiy mol-mulki ular nikohda turgan davrda yoki nikoh bekor qilingandan keyin bo'linishi mumkin. Mol-mulkni bo'lishda er va xotinning ulushlari teng deb hisoblanadi, agar er-xotin o'rtasidagi shartnomada boshqacha tartib nazarda tutilmagan bo'lsa.",
@@ -57,27 +97,23 @@
   },
   {
     "code": "OK",
+    "code_name": "Oila kodeksi",
     "article": "96",
     "title": "Aliment (nafaqa) miqdori",
-    "text": "Voyaga yetmagan farzandlar uchun aliment ota-onaning daromadidan quyidagi miqdorda undiriladi: bitta farzandga — to'rtdan bir, ikki farzandga — uchdan bir, uch va undan ortiq farzandga — daromadning yarmi.",
+    "text": "Voyaga yetmagan farzandlar uchun aliment ota-onaning daromadidan quyidagi miqdorda undiriladi: bitta farzandga — to'rtdan bir, ikki farzandga — uchdan bir, uch va undan ortiq farzandga — daromadning yarmi. Sud holatlarni hisobga olib, alimentning aniq miqdorini ulushlarda yoki qat'iy pul summasida belgilashi mumkin.",
+    "dispute_type": "family"
+  },
+  {
+    "code": "OK",
+    "code_name": "Oila kodeksi",
+    "article": "39",
+    "title": "Nikohni bekor qilish tartibi",
+    "text": "Nikoh sudda bekor qilinadi. Voyaga yetmagan umumiy farzandlari yo'q va nikohni bekor qilishga ikkala tomon roziligini bergan er-xotinning nikohi FHDYo organida bekor qilinishi mumkin. Nikohni bekor qilish to'g'risida ariza yashash joyidagi sudga beriladi.",
     "dispute_type": "family"
   },
   {
     "code": "JK",
-    "article": "97",
-    "title": "Qasddan odam o'ldirish",
-    "text": "Qasddan odam o'ldirish, ya'ni boshqa shaxsning hayotidan qasddan mahrum qilish — o'n yildan o'n besh yilgacha ozodlikdan mahrum qilish bilan jazolanadi.",
-    "dispute_type": "criminal"
-  },
-  {
-    "code": "JK",
-    "article": "168",
-    "title": "Firibgarlik",
-    "text": "Firibgarlik, ya'ni aldash yoki ishonchni suiiste'mol qilish yo'li bilan o'zganing mol-mulkini yoki mol-mulkka bo'lgan huquqni egallash — jarima yoki uch yilgacha ozodlikdan mahrum qilish bilan jazolanadi. Ko'p miqdorda sodir etilgan bo'lsa, jazo og'irlashadi.",
-    "dispute_type": "criminal"
-  },
-  {
-    "code": "JK",
+    "code_name": "Jinoyat kodeksi",
     "article": "55",
     "title": "Jazoni yengillashtiruvchi holatlar",
     "text": "Chin ko'ngildan pushaymon bo'lish, aybiga iqror bo'lish, jinoyat oqibatlariga ko'maklashish, yetkazilgan zararni qoplash, jabrlanuvchi bilan yarashish jazoni yengillashtiruvchi holatlar hisoblanadi.",
@@ -85,13 +121,39 @@
   },
   {
     "code": "JK",
+    "code_name": "Jinoyat kodeksi",
     "article": "56",
     "title": "Jazoni og'irlashtiruvchi holatlar",
     "text": "Jinoyatni qayta sodir etish, jinoyatni bir guruh shaxslar tomonidan sodir etish, jabrlanuvchining nochor ahvolidan foydalanish, jinoyatni alohida qabihlik bilan sodir etish jazoni og'irlashtiruvchi holatlar hisoblanadi.",
     "dispute_type": "criminal"
   },
   {
+    "code": "JK",
+    "code_name": "Jinoyat kodeksi",
+    "article": "97",
+    "title": "Qasddan odam o'ldirish",
+    "text": "Qasddan odam o'ldirish, ya'ni boshqa shaxsning hayotidan qasddan mahrum qilish — o'n yildan o'n besh yilgacha ozodlikdan mahrum qilish bilan jazolanadi.",
+    "dispute_type": "criminal"
+  },
+  {
+    "code": "JK",
+    "code_name": "Jinoyat kodeksi",
+    "article": "168",
+    "title": "Firibgarlik",
+    "text": "Firibgarlik, ya'ni aldash yoki ishonchni suiiste'mol qilish yo'li bilan o'zganing mol-mulkini yoki mol-mulkka bo'lgan huquqni egallash — jarima yoki uch yilgacha ozodlikdan mahrum qilish bilan jazolanadi. Ko'p miqdorda sodir etilgan bo'lsa, jazo og'irlashadi.",
+    "dispute_type": "criminal"
+  },
+  {
+    "code": "JK",
+    "code_name": "Jinoyat kodeksi",
+    "article": "169",
+    "title": "O'g'irlik",
+    "text": "O'zganing mol-mulkini yashirin tarzda o'g'irlash, ya'ni o'g'irlik — bazaviy hisoblash miqdorining yuz baravarigacha jarima yoki ikki yilgacha ozodlikdan mahrum qilish bilan jazolanadi. Bir guruh shaxslar tomonidan oldindan til biriktirilib sodir etilgan bo'lsa, jazo og'irlashadi.",
+    "dispute_type": "criminal"
+  },
+  {
     "code": "MJK",
+    "code_name": "Ma'muriy javobgarlik to'g'risidagi kodeks",
     "article": "128",
     "title": "Mehnat to'g'risidagi qonun hujjatlarini buzish",
     "text": "Mehnat to'g'risidagi qonun hujjatlarini buzish — bazaviy hisoblash miqdorining bir baravaridan uch baravarigacha miqdorda jarima solishga sabab bo'ladi.",
@@ -99,16 +161,74 @@
   },
   {
     "code": "FPK",
+    "code_name": "Fuqarolik protsessual kodeksi",
     "article": "151",
     "title": "Da'voni ta'minlash choralari",
     "text": "Sud yoki sudya ishda ishtirok etuvchi shaxslarning arizasiga binoan da'voni ta'minlash choralarini ko'rishi mumkin. Da'voni ta'minlash chorasi sifatida javobgarga tegishli mol-mulkka hibs qo'yish, javobgarga muayyan harakatlarni amalga oshirishni taqiqlash qo'llanilishi mumkin.",
     "dispute_type": "civil"
   },
   {
+    "code": "FPK",
+    "code_name": "Fuqarolik protsessual kodeksi",
+    "article": "188",
+    "title": "Da'vo arizasining shakli va mazmuni",
+    "text": "Da'vo arizasi yozma ravishda taqdim etiladi va unda quyidagilar ko'rsatiladi: sud nomi, da'vogar va javobgarning F.I.O., manzili, da'vo mohiyati, da'vogarning talabi, da'voni asoslovchi holatlar, dalillar, da'vo summasi, ariza ilovasidagi hujjatlar ro'yxati. Da'vo arizasiga davlat boji to'langanligi to'g'risidagi hujjat ilova qilinadi.",
+    "dispute_type": "civil"
+  },
+  {
+    "code": "FPK",
+    "code_name": "Fuqarolik protsessual kodeksi",
+    "article": "32",
+    "title": "Sud yurisdiksiyasi (qaysi sudga ariza beriladi)",
+    "text": "Da'vo arizasi javobgarning yashash joyi yoki yuridik shaxs joylashgan joydagi sudga beriladi. Ko'chmas mulk to'g'risidagi nizolar mol-mulk joylashgan joydagi sudga, mehnat nizolari xodimning ish joyidagi sudga, oilaviy nizolar da'vogar yoki javobgarning yashash joyidagi sudga taqdim etiladi.",
+    "dispute_type": "civil"
+  },
+  {
     "code": "IPK",
+    "code_name": "Iqtisodiy protsessual kodeksi",
     "article": "9",
     "title": "Iqtisodiy sudlarda nizolarni hal qilish",
     "text": "Iqtisodiy sud tadbirkorlik va boshqa iqtisodiy faoliyatni amalga oshirish bilan bog'liq nizolarni, shu jumladan shartnomalardan kelib chiqadigan nizolarni, mol-mulkni undirish to'g'risidagi nizolarni ko'rib chiqadi.",
     "dispute_type": "economic"
+  },
+  {
+    "code": "SK",
+    "code_name": "Soliq kodeksi",
+    "article": "329",
+    "title": "Davlat boji miqdori (fuqarolik ishlari)",
+    "text": "Mol-mulkka oid bo'lmagan da'volar bo'yicha davlat boji bazaviy hisoblash miqdorining 1 baravari miqdorida belgilanadi. Mol-mulkka oid da'volar bo'yicha davlat boji da'vo summasidan kelib chiqib quyidagi miqdorda olinadi: 100 BHM gacha — 4 foiz (lekin 1 BHM dan kam emas); 100-1000 BHM — 4 BHM + 100 BHM dan ortig'idan 3 foiz; 1000 BHM va undan ortiq — 31 BHM + 1000 BHM dan ortig'idan 2 foiz.",
+    "dispute_type": "civil"
+  },
+  {
+    "code": "SK",
+    "code_name": "Soliq kodeksi",
+    "article": "330",
+    "title": "Davlat boji to'lashdan ozod qilinadigan shaxslar",
+    "text": "Quyidagi shaxslar davlat bojidan ozod qilinadi: ish haqi va boshqa mehnat haqlarini undirish to'g'risidagi da'volar bo'yicha xodimlar; aliment undirish to'g'risidagi da'volar bo'yicha da'vogar; mehnat shikastlanishi natijasida zarar yetkazilganligi to'g'risidagi da'volar bo'yicha jabrlanuvchi; davlat organlarining noqonuniy harakatlari natijasida zarar yetkazilganligi to'g'risidagi da'volar bo'yicha fuqarolar.",
+    "dispute_type": "civil"
+  },
+  {
+    "code": "JPK",
+    "code_name": "Jinoyat protsessual kodeksi",
+    "article": "29",
+    "title": "Aybsizlik prezumpsiyasi",
+    "text": "Har bir shaxs sudning qonuniy kuchga kirgan hukmi bilan ayblanishi isbotlanmaguncha aybsiz hisoblanadi. Shubhalar ayblanuvchining foydasiga hal qilinadi. Ayblanuvchi o'zining aybsizligini isbotlashga majbur emas — aybni isbotlash ayblovchi tomon zimmasida.",
+    "dispute_type": "criminal"
+  },
+  {
+    "code": "KONST",
+    "code_name": "O'zbekiston Respublikasi Konstitutsiyasi",
+    "article": "44",
+    "title": "Sud himoyasi huquqi",
+    "text": "Har kim o'z huquq va erkinliklarini sud orqali himoya qilish huquqiga, davlat organlari, mansabdor shaxslar, jamoat birlashmalarining g'ayriqonuniy harakatlari ustidan sudga shikoyat qilish huquqiga ega.",
+    "dispute_type": "other"
+  },
+  {
+    "code": "KONST",
+    "code_name": "O'zbekiston Respublikasi Konstitutsiyasi",
+    "article": "26",
+    "title": "Shaxsiy daxlsizlik huquqi",
+    "text": "Hech kim qiynoqqa solinishi, zo'ravonlik, boshqacha shafqatsiz yoki inson qadr-qimmatini kamsituvchi muomalaga duchor etilishi mumkin emas. Hech kim uning roziligisiz tibbiy yoki ilmiy tajribalarga ducha qilinmasligi kerak.",
+    "dispute_type": "criminal"
   }
 ]

@@ -57,7 +57,9 @@ class OllamaClient:
         options = {
             "temperature": temperature
             if temperature is not None
-            else settings.LLM_TEMPERATURE
+            else settings.LLM_TEMPERATURE,
+            "num_ctx": settings.LLM_NUM_CTX,
+            "repeat_penalty": 1.15,
         }
         if num_predict is not None:
             options["num_predict"] = num_predict
@@ -95,7 +97,9 @@ class OllamaClient:
         options = {
             "temperature": temperature
             if temperature is not None
-            else settings.LLM_TEMPERATURE
+            else settings.LLM_TEMPERATURE,
+            "num_ctx": settings.LLM_NUM_CTX,
+            "repeat_penalty": 1.15,
         }
         if num_predict is not None:
             options["num_predict"] = num_predict

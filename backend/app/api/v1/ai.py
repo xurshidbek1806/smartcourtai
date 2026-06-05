@@ -243,23 +243,39 @@ async def auto_exec(case_id: int, user: CurrentUser):
 
 # ── AI Legal Assistant (chatbot) ─────────────────────────────
 # Minimum cosine similarity for a retrieved law to be considered relevant.
-# Anything below this is dropped — otherwise the LLM cites unrelated codices
-# for off-topic questions (e.g. "Davlat boji qancha?" returning Mehnat
-# kodeksi articles just because they were the top-3 by score).
-_RAG_RELEVANCE_THRESHOLD = 0.55
+# bge-m3 produces uniformly high cosine scores across Uzbek legal text
+# (everything sits around 0.65–0.75 because it's all legal vocabulary),
+# so the safest policy for the chat assistant is: only feed the LLM the
+# single best-matching article, and only if it clears an absolute floor.
+# A second article is added ONLY when it shares the same dispute_type as
+# the top hit AND scores within 0.03 of it — otherwise its presence just
+# confuses the LLM into citing it.
+_RAG_ABSOLUTE_MIN_SCORE = 0.65
+_RAG_SIBLING_GAP = 0.03
 
 
 async def _build_assistant_prompt(message: str, use_context: bool) -> tuple[str, bool]:
     if not use_context:
         return message, False
-    laws = await rag.retrieve_laws(message, limit=3)
-    relevant = [l for l in laws if (l.get("score") or 0) >= _RAG_RELEVANCE_THRESHOLD]
-    if not relevant:
+    laws = await rag.retrieve_laws(message, limit=5)
+    if not laws:
         return message, False
+    top = laws[0]
+    top_score = top.get("score") or 0
+    if top_score < _RAG_ABSOLUTE_MIN_SCORE:
+        return message, False
+    relevant = [top]
+    for cand in laws[1:]:
+        if (
+            (cand.get("score") or 0) >= top_score - _RAG_SIBLING_GAP
+            and cand.get("dispute_type") == top.get("dispute_type")
+            and len(relevant) < 2
+        ):
+            relevant.append(cand)
     context = rag.format_laws(relevant)
     prompt = (
-        f"## TEGISHLI QONUNLAR (faqat agar savolga to'g'ridan-to'g'ri "
-        f"aloqador bo'lsa, ulardan foydalan)\n{context}\n\n"
+        f"## TEGISHLI QONUNLAR (faqat shu moddalardan foydalan, boshqa modda "
+        f"raqamlarini O'YLAB CHIQARMA)\n{context}\n\n"
         f"## SAVOL\n{message}"
     )
     return prompt, True
