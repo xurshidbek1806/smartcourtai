@@ -6,27 +6,52 @@ import RoleShell from '@/layouts/RoleShell.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { judgeNav } from '@/data/navigation';
 import { useUi } from '@/stores/ui';
-import { wsBase } from '@/lib/api';
+import { wsBase, getToken } from '@/lib/api';
 
 const ui = useUi();
 
 const CASE_ID = 2026001234;
 const CLIP_MS = 5000; // har 5 soniyada audio bo'lagini yuborish
 const SPEAKERS = ['Sudya', 'Da\'vogar', 'Javobgar', 'Advokat', 'Guvoh', 'Prokuror'];
+const LANGUAGES = [
+  { code: 'uz', label: 'O‘zbek' },
+  { code: 'ru', label: 'Rus' },
+  { code: 'auto', label: 'Avto' }
+];
+const MAX_RENDERED_SEGMENTS = 300; // DOM da ko'rsatiladigan maksimum (xotira uchun)
+const WAVE_BARS = 64;
+const RECONNECT_MAX = 5;
+const RECONNECT_BASE_MS = 800;
 
 const connected = ref(false);
 const recording = ref(false);
-const processing = ref(false);  // backend currently transcribing a clip
+const processing = ref(false); // backend currently transcribing a clip
 const statusText = ref('Ulanmagan');
 const currentSpeaker = ref('Sudya');
+const language = ref('uz');
 const segments = ref([]); // { ts, idx, speaker, text, insight, silent? }
 const insights = ref([]); // { text }
+const waveBars = ref(new Array(WAVE_BARS).fill(6));
 const transcriptEl = ref(null);
 
 let ws = null;
 let mediaStream = null;
 let recorder = null;
 let clipTimer = null;
+
+// Reconnect state
+let reconnectAttempts = 0;
+let reconnectTimer = null;
+let intentionalClose = false; // true when WE close (stop/unmount) — no reconnect
+
+// Full transcript kept outside the reactive (rendered) list so a long
+// hearing doesn't blow up the DOM but the .txt export stays complete.
+let fullTranscript = []; // { ts, speaker, text }
+
+// Web Audio (real waveform)
+let audioCtx = null;
+let analyser = null;
+let waveRaf = null;
 
 const elapsedLabel = computed(() => {
   const last = segments.value.at(-1);
@@ -43,60 +68,80 @@ const scrollToBottom = async () => {
 };
 
 // ── WebSocket ───────────────────────────────────────────────
+const buildWsUrl = () => {
+  const token = getToken();
+  const params = new URLSearchParams();
+  if (token) params.set('token', token);
+  params.set('lang', language.value);
+  return `${wsBase}/ws/hearing/${CASE_ID}?${params.toString()}`;
+};
+
+const handleMessage = (ev) => {
+  let data;
+  try {
+    data = JSON.parse(ev.data);
+  } catch {
+    return;
+  }
+  if (data.type === 'segment') {
+    processing.value = false;
+    fullTranscript.push({ ts: data.ts, speaker: data.speaker, text: data.text });
+    segments.value.push({
+      ts: data.ts,
+      idx: data.idx,
+      speaker: data.speaker,
+      text: data.text,
+      insight: null
+    });
+    // DOM ni cheklash — eng eski segmentlarni rendered ro'yxatdan olib
+    // tashlaymiz (to'liq nusxa fullTranscript da saqlanib qoladi).
+    if (segments.value.length > MAX_RENDERED_SEGMENTS) {
+      segments.value.splice(0, segments.value.length - MAX_RENDERED_SEGMENTS);
+    }
+    scrollToBottom();
+  } else if (data.type === 'insight') {
+    const seg = segments.value.find((s) => s.idx === data.segment_idx);
+    if (seg) seg.insight = data.text;
+    insights.value.unshift({ text: data.text });
+    if (insights.value.length > 50) insights.value.splice(50);
+  } else if (data.type === 'silent') {
+    processing.value = false;
+    segments.value.push({
+      ts: data.ts,
+      speaker: '',
+      text: '(jim — nutq aniqlanmadi)',
+      insight: null,
+      silent: true
+    });
+    if (segments.value.length > MAX_RENDERED_SEGMENTS) {
+      segments.value.splice(0, segments.value.length - MAX_RENDERED_SEGMENTS);
+    }
+    scrollToBottom();
+  } else if (data.type === 'processing') {
+    processing.value = true;
+  } else if (data.type === 'status') {
+    statusText.value = data.message;
+  } else if (data.type === 'error') {
+    processing.value = false;
+    ui.pushToast({ type: 'error', title: 'STT xatosi', text: data.message });
+  }
+};
+
 const connectWs = () =>
   new Promise((resolve, reject) => {
-    const url = `${wsBase}/ws/hearing/${CASE_ID}`;
-    ws = new WebSocket(url);
+    intentionalClose = false;
+    ws = new WebSocket(buildWsUrl());
 
     ws.onopen = () => {
       connected.value = true;
+      reconnectAttempts = 0;
       statusText.value = 'Ulandi';
-      // joriy gapiruvchini yuborish
       ws.send(JSON.stringify({ type: 'speaker', speaker: currentSpeaker.value }));
+      ws.send(JSON.stringify({ type: 'lang', lang: language.value }));
       resolve();
     };
 
-    ws.onmessage = (ev) => {
-      let data;
-      try {
-        data = JSON.parse(ev.data);
-      } catch {
-        return;
-      }
-      if (data.type === 'segment') {
-        processing.value = false;
-        segments.value.push({
-          ts: data.ts,
-          idx: data.idx,
-          speaker: data.speaker,
-          text: data.text,
-          insight: null
-        });
-        scrollToBottom();
-      } else if (data.type === 'insight') {
-        // Late-arriving LLM insight — attach to its segment by idx.
-        const seg = segments.value.find((s) => s.idx === data.segment_idx);
-        if (seg) seg.insight = data.text;
-        insights.value.unshift({ text: data.text });
-      } else if (data.type === 'silent') {
-        processing.value = false;
-        segments.value.push({
-          ts: data.ts,
-          speaker: '',
-          text: '(jim — nutq aniqlanmadi)',
-          insight: null,
-          silent: true
-        });
-        scrollToBottom();
-      } else if (data.type === 'processing') {
-        processing.value = true;
-      } else if (data.type === 'status') {
-        statusText.value = data.message;
-      } else if (data.type === 'error') {
-        processing.value = false;
-        ui.pushToast({ type: 'error', title: 'STT xatosi', text: data.message });
-      }
-    };
+    ws.onmessage = handleMessage;
 
     ws.onerror = (e) => {
       console.error('[hearing] WS error:', e);
@@ -105,22 +150,56 @@ const connectWs = () =>
     };
 
     ws.onclose = (e) => {
-      console.warn(`[hearing] WS closed: code=${e.code}, reason='${e.reason}', wasClean=${e.wasClean}`);
+      console.warn(`[hearing] WS closed: code=${e.code}, wasClean=${e.wasClean}`);
       connected.value = false;
-      statusText.value = 'Uzildi';
       processing.value = false;
-      // Tarmoq uzilsa, recording'ni darhol to'xtatamiz — aks holda mikrofon
-      // havoga yozib turaveradi va foydalanuvchi vaqt yo'qotadi.
-      if (recording.value) {
+
+      // Auth rad etildi (4401) — qayta urinmaymiz.
+      if (e.code === 4401) {
+        statusText.value = 'Avtorizatsiya rad etildi';
         ui.pushToast({
           type: 'error',
-          title: 'Aloqa uzildi',
-          text: 'Server bilan ulanish yo\'qoldi. Yozib olish to\'xtatildi.'
+          title: 'Ruxsat yo\'q',
+          text: 'Jonli majlis uchun sudya sifatida tizimga kiring.'
         });
         stopRecording({ keepWsOpen: false });
+        return;
       }
+
+      // Biz ataylab yopgan bo'lsak — reconnect qilmaymiz.
+      if (intentionalClose || !recording.value) {
+        statusText.value = 'To\'xtatildi';
+        return;
+      }
+
+      // Kutilmagan uzilish — qayta ulanishga urinamiz (backoff bilan).
+      attemptReconnect();
     };
   });
+
+const attemptReconnect = () => {
+  if (reconnectAttempts >= RECONNECT_MAX) {
+    statusText.value = 'Aloqa uzildi';
+    ui.pushToast({
+      type: 'error',
+      title: 'Qayta ulanib bo\'lmadi',
+      text: `${RECONNECT_MAX} marta urinildi. Yozib olish to'xtatildi.`
+    });
+    stopRecording({ keepWsOpen: false });
+    return;
+  }
+  reconnectAttempts += 1;
+  const delay = RECONNECT_BASE_MS * 2 ** (reconnectAttempts - 1); // 0.8s,1.6s,3.2s...
+  statusText.value = `Qayta ulanmoqda (${reconnectAttempts}/${RECONNECT_MAX})...`;
+  reconnectTimer = window.setTimeout(async () => {
+    try {
+      await connectWs();
+      ui.pushToast({ type: 'success', title: 'Qayta ulandi', text: 'Yozib olish davom etmoqda.' });
+    } catch {
+      attemptReconnect(); // yana urinamiz
+    }
+  }, delay);
+};
 
 // ── Mikrofon + MediaRecorder ────────────────────────────────
 const pickMime = () => {
@@ -131,11 +210,55 @@ const pickMime = () => {
   return '';
 };
 
+// ── Real waveform (Web Audio AnalyserNode) ──────────────────
+const startWaveform = () => {
+  if (!mediaStream) return;
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioCtx.createMediaStreamSource(mediaStream);
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256; // → 128 frequency bins
+    source.connect(analyser);
+    const bins = analyser.frequencyBinCount;
+    const buf = new Uint8Array(bins);
+    const step = Math.floor(bins / WAVE_BARS) || 1;
+
+    const tick = () => {
+      analyser.getByteFrequencyData(buf);
+      const bars = new Array(WAVE_BARS);
+      for (let i = 0; i < WAVE_BARS; i += 1) {
+        const v = buf[i * step] || 0; // 0..255
+        bars[i] = 6 + Math.round((v / 255) * 64); // 6..70 px
+      }
+      waveBars.value = bars;
+      waveRaf = requestAnimationFrame(tick);
+    };
+    tick();
+  } catch (e) {
+    console.warn('[hearing] waveform unavailable:', e);
+  }
+};
+
+const stopWaveform = () => {
+  if (waveRaf) {
+    cancelAnimationFrame(waveRaf);
+    waveRaf = null;
+  }
+  if (audioCtx) {
+    audioCtx.close().catch(() => {});
+    audioCtx = null;
+  }
+  analyser = null;
+  waveBars.value = new Array(WAVE_BARS).fill(6);
+};
+
 const startRecording = async () => {
   if (recording.value) return;
   // Eski sessiya segmentlari/insightlarini tozalaymiz (qotib qolgan axlat ketadi).
   segments.value = [];
   insights.value = [];
+  fullTranscript = [];
+  reconnectAttempts = 0;
   try {
     mediaStream = await navigator.mediaDevices.getUserMedia({
       audio: {
@@ -169,6 +292,8 @@ const startRecording = async () => {
     mediaStream.getTracks().forEach((t) => t.stop());
     return;
   }
+
+  startWaveform();
 
   const mimeType = pickMime();
 
@@ -216,10 +341,16 @@ const startRecording = async () => {
 
 const stopRecording = ({ keepWsOpen = true } = {}) => {
   recording.value = false;
+  intentionalClose = true; // reconnect'ni o'chiramiz
+  if (reconnectTimer) {
+    window.clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
   if (clipTimer) {
     window.clearTimeout(clipTimer);
     clipTimer = null;
   }
+  stopWaveform();
   // Oxirgi bo'lakni yuborish uchun recorder'ni to'xtatamiz (onstop -> ws.send).
   if (recorder && recorder.state === 'recording') recorder.stop();
   recorder = null;
@@ -249,9 +380,17 @@ const setSpeaker = (sp) => {
   }
 };
 
+const setLanguage = (code) => {
+  language.value = code;
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'lang', lang: code }));
+  }
+};
+
 const saveTranscript = () => {
-  const usable = segments.value.filter((s) => !s.silent);
-  if (!usable.length) {
+  // To'liq nusxadan foydalanamiz (fullTranscript) — rendered segments
+  // cheklangan bo'lishi mumkin, lekin stenogramma butun bo'lishi shart.
+  if (!fullTranscript.length) {
     ui.pushToast({ type: 'error', title: 'Stenogramma bo\'sh', text: 'Avval majlisni yozib oling.' });
     return;
   }
@@ -262,12 +401,13 @@ const saveTranscript = () => {
     '────────────────────────────────────',
     `Ish raqami: #${CASE_ID}`,
     `Sana: ${dateStr}`,
-    `Segmentlar soni: ${usable.length}`,
+    `Til: ${language.value}`,
+    `Segmentlar soni: ${fullTranscript.length}`,
     '',
     'STENOGRAMMA',
     '────────────────────────────────────'
   ].join('\n');
-  const body = usable
+  const body = fullTranscript
     .map((s) => `[${String(s.ts).padStart(5, ' ')}s] ${s.speaker}: ${s.text}`)
     .join('\n');
   const text = `${header}\n${body}\n`;
@@ -285,7 +425,7 @@ const addBookmark = () => {
   ui.pushToast({ type: 'success', title: 'Bookmark', text: `${elapsedLabel.value} belgilab qo\'yildi.` });
 };
 
-onBeforeUnmount(stopRecording);
+onBeforeUnmount(() => stopRecording({ keepWsOpen: false }));
 </script>
 
 <template>
@@ -323,9 +463,26 @@ onBeforeUnmount(stopRecording);
           </button>
         </div>
 
-        <!-- Waveform -->
+        <!-- Language selector -->
+        <div class="speakers">
+          <span class="lbl">Til:</span>
+          <button
+            v-for="l in LANGUAGES"
+            :key="l.code"
+            :class="['chip', { active: language === l.code }]"
+            @click="setLanguage(l.code)"
+          >
+            {{ l.label }}
+          </button>
+        </div>
+
+        <!-- Waveform (real-time mic amplitude) -->
         <div class="waveform" :class="{ paused: !recording }">
-          <span v-for="bar in 80" :key="bar" :style="{ height: `${18 + ((bar * 17) % 70)}px` }" />
+          <span
+            v-for="(h, i) in waveBars"
+            :key="i"
+            :style="{ height: `${h}px` }"
+          />
         </div>
 
         <!-- Live transcript -->
@@ -446,16 +603,13 @@ h1 {
 .waveform span {
   width: 5px;
   border-radius: 999px;
-  background: var(--gray-900);
-  opacity: 0.36;
-  animation: pulse 1.1s ease-in-out infinite;
+  background: var(--stat-blue, #0a66f2);
+  opacity: 0.7;
+  transition: height 0.08s linear;
 }
 .waveform.paused span {
-  opacity: 0.12;
-  animation: none;
-}
-@keyframes pulse {
-  50% { transform: scaleY(0.4); }
+  opacity: 0.15;
+  background: var(--gray-900);
 }
 
 .transcript-box {

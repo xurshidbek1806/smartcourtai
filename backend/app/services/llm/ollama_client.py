@@ -61,6 +61,8 @@ class OllamaClient:
             "num_ctx": settings.LLM_NUM_CTX,
             "repeat_penalty": 1.15,
         }
+        if settings.LLM_NUM_GPU >= 0:
+            options["num_gpu"] = settings.LLM_NUM_GPU
         if num_predict is not None:
             options["num_predict"] = num_predict
 
@@ -101,6 +103,8 @@ class OllamaClient:
             "num_ctx": settings.LLM_NUM_CTX,
             "repeat_penalty": 1.15,
         }
+        if settings.LLM_NUM_GPU >= 0:
+            options["num_gpu"] = settings.LLM_NUM_GPU
         if num_predict is not None:
             options["num_predict"] = num_predict
 
@@ -140,8 +144,17 @@ class OllamaClient:
     # so we give the embed client a generous read timeout.
     _embed_timeout = httpx.Timeout(connect=10.0, read=300.0, write=30.0, pool=10.0)
 
+    # Force embeddings onto CPU (num_gpu=0): bge-m3 is small and fast on CPU,
+    # and keeping it off the GPU means the LLM never gets evicted from VRAM —
+    # which on a 6 GB card was causing a ~30 s model swap on every request.
+    _embed_options = {"num_gpu": settings.EMBED_NUM_GPU}
+
     async def embed(self, text: str, model: Optional[str] = None) -> list[float]:
-        payload = {"model": model or self.embed_model, "input": text}
+        payload = {
+            "model": model or self.embed_model,
+            "input": text,
+            "options": self._embed_options,
+        }
         async with httpx.AsyncClient(timeout=self._embed_timeout) as client:
             r = await client.post(f"{self.base_url}/api/embed", json=payload)
             r.raise_for_status()
@@ -150,7 +163,11 @@ class OllamaClient:
             return embeddings[0]
 
     async def embed_batch(self, texts: list[str]) -> list[list[float]]:
-        payload = {"model": self.embed_model, "input": texts}
+        payload = {
+            "model": self.embed_model,
+            "input": texts,
+            "options": self._embed_options,
+        }
         async with httpx.AsyncClient(timeout=self._embed_timeout) as client:
             r = await client.post(f"{self.base_url}/api/embed", json=payload)
             r.raise_for_status()

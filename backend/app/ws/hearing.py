@@ -12,12 +12,14 @@ Protocol (JSON text frames, or binary audio frames):
 import asyncio
 import os
 import uuid
+from typing import Optional
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from loguru import logger
 from starlette.websockets import WebSocketState
 
 from app.core.config import settings
+from app.core.security import decode_token
 from app.services.llm.ollama_client import llm
 from app.services.whisper_service import transcribe
 
@@ -69,14 +71,49 @@ async def _send_insight_async(
         pass
 
 
+# Roles allowed to drive a live hearing.
+_ALLOWED_ROLES = {"judge", "admin", "oversight"}
+
+
+def _authorize(websocket: WebSocket) -> Optional[dict]:
+    """Validate the JWT passed as ?token=... query param.
+
+    Returns the decoded payload if the token is valid and the role is
+    permitted, else None. WebSockets can't use the normal Authorization
+    header from the browser, so the token rides in the query string.
+    """
+    token = websocket.query_params.get("token")
+    if not token:
+        return None
+    payload = decode_token(token)
+    if not payload or "sub" not in payload:
+        return None
+    if payload.get("role") not in _ALLOWED_ROLES:
+        return None
+    return payload
+
+
 @router.websocket("/ws/hearing/{case_id}")
 async def hearing_ws(websocket: WebSocket, case_id: int):
+    # ── Auth gate ────────────────────────────────────────────
+    # In dev (DEBUG) we allow a tokenless connection so the demo works
+    # without login; in production a valid judge/admin token is required.
+    payload = _authorize(websocket)
+    if payload is None and not settings.DEBUG:
+        await websocket.close(code=4401)  # 4401 = custom "unauthorized"
+        logger.warning(f"Hearing #{case_id}: unauthorized WS rejected")
+        return
+
     await websocket.accept()
     os.makedirs(TMP_DIR, exist_ok=True)
     current_speaker = "Noma'lum"
+    # Per-session language: ?lang=auto|uz|ru|en (default from settings).
+    session_lang = websocket.query_params.get("lang") or settings.WHISPER_LANGUAGE
     elapsed = 0.0
     segment_idx = 0
     insight_tasks: list[asyncio.Task] = []
+    user_label = payload.get("sub") if payload else "demo"
+    logger.info(f"Hearing #{case_id} opened by user={user_label}, lang={session_lang}")
     await websocket.send_json({"type": "status", "message": f"Majlis #{case_id} ulandi"})
 
     try:
@@ -88,7 +125,7 @@ async def hearing_ws(websocket: WebSocket, case_id: int):
                 logger.info(f"Hearing #{case_id} client disconnected")
                 break
 
-            # Text control frame (e.g. set speaker)
+            # Text control frame (e.g. set speaker / language)
             if "text" in message and message["text"] is not None:
                 import json
 
@@ -100,6 +137,11 @@ async def hearing_ws(websocket: WebSocket, case_id: int):
                     current_speaker = data.get("speaker", current_speaker)
                     await websocket.send_json(
                         {"type": "status", "message": f"Gapiruvchi: {current_speaker}"}
+                    )
+                elif data.get("type") == "lang":
+                    session_lang = data.get("lang", session_lang)
+                    await websocket.send_json(
+                        {"type": "status", "message": f"Til: {session_lang}"}
                     )
                 continue
 
@@ -118,7 +160,7 @@ async def hearing_ws(websocket: WebSocket, case_id: int):
                 with open(clip_path, "wb") as f:
                     f.write(audio_bytes)
                 try:
-                    result = await transcribe(clip_path)
+                    result = await transcribe(clip_path, language=session_lang)
                 except Exception as exc:  # noqa: BLE001
                     logger.error(f"[hearing #{case_id}] transcribe FAILED: {exc}")
                     await websocket.send_json(

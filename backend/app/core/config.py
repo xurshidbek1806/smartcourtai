@@ -30,9 +30,15 @@ class Settings(BaseSettings):
 
     # Ollama / LLM
     OLLAMA_BASE_URL: str = "http://localhost:11434"
-    LLM_MODEL: str = "qwen3.5:9b"
-    LLM_NUM_CTX: int = 8192
+    LLM_MODEL: str = "llama3.1:8b"
+    LLM_NUM_CTX: int = 4096
+    # GPU layers for the LLM. -1 = let Ollama auto-place (recommended): on a
+    # 6 GB card it puts the whole 8b model on GPU at ctx 4096 on its own.
+    # Forcing 99 caused a cudaMalloc OOM at startup. Embeddings always run on
+    # CPU (EMBED_NUM_GPU=0) so the two models never fight over the same VRAM.
+    LLM_NUM_GPU: int = -1
     EMBED_MODEL: str = "bge-m3"
+    EMBED_NUM_GPU: int = 0  # bge-m3 on CPU (tiny, ~150ms) — keeps VRAM free for LLM
     LLM_TEMPERATURE: float = 0.3
 
     # Qdrant

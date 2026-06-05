@@ -58,11 +58,27 @@ def _is_garbage(text: str) -> bool:
     return False
 
 
+def _resolve_language(language: Optional[str]) -> Optional[str]:
+    """Map the requested language to what faster-whisper expects.
+
+    - "auto" / "" → None  (model auto-detects per clip; handles uz/ru/en mix)
+    - explicit code (e.g. "uz", "ru", "en") → used as-is
+    - None → fall back to the configured default (WHISPER_LANGUAGE)
+    """
+    if language is None:
+        language = settings.WHISPER_LANGUAGE
+    language = (language or "").strip().lower()
+    if language in ("", "auto"):
+        return None
+    return language
+
+
 def _transcribe_sync(audio_path: str, language: Optional[str]) -> dict:
     model = _load_model()
+    resolved_lang = _resolve_language(language)
     segments, info = model.transcribe(
         audio_path,
-        language=language or settings.WHISPER_LANGUAGE,
+        language=resolved_lang,  # None → auto-detect (uz/ru/en aralash nutq)
         # Aniqlik ustuvor (sekin bo'lsa ham mayli): beam search + best_of.
         beam_size=5,
         best_of=5,
