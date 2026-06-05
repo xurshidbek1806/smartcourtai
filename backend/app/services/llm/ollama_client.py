@@ -136,9 +136,13 @@ class OllamaClient:
                             return
 
     # ── Embeddings ────────────────────────────────────────────
+    # First call to bge-m3 (~1.2 GB) can take 30-90 s to load on CPU,
+    # so we give the embed client a generous read timeout.
+    _embed_timeout = httpx.Timeout(connect=10.0, read=300.0, write=30.0, pool=10.0)
+
     async def embed(self, text: str, model: Optional[str] = None) -> list[float]:
         payload = {"model": model or self.embed_model, "input": text}
-        async with httpx.AsyncClient(timeout=60) as client:
+        async with httpx.AsyncClient(timeout=self._embed_timeout) as client:
             r = await client.post(f"{self.base_url}/api/embed", json=payload)
             r.raise_for_status()
             data = r.json()
@@ -147,7 +151,7 @@ class OllamaClient:
 
     async def embed_batch(self, texts: list[str]) -> list[list[float]]:
         payload = {"model": self.embed_model, "input": texts}
-        async with httpx.AsyncClient(timeout=120) as client:
+        async with httpx.AsyncClient(timeout=self._embed_timeout) as client:
             r = await client.post(f"{self.base_url}/api/embed", json=payload)
             r.raise_for_status()
             return r.json()["embeddings"]
