@@ -16,73 +16,68 @@ import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseCard from '@/components/ui/BaseCard.vue';
 import BaseBadge from '@/components/ui/BaseBadge.vue';
 import { portalNav } from '@/data/navigation';
-import { getDemoCase, resetDemoCase, updateDemoCase } from '@/services/demoCase';
 import { useUi } from '@/stores/ui';
+import { validateClaim } from '@/lib/api';
 
 const ui = useUi();
 const router = useRouter();
-const demoCase = ref(getDemoCase());
 const claimText = ref(
   'Men Orion LLC bilan tuzilgan mehnat shartnomasi bo‘yicha 50 000 000 so‘m kompensatsiya talab qilaman. Ish beruvchi shartnomani ogohlantirishsiz bekor qilgan.'
 );
 const fileName = ref('');
 const analyzing = ref(false);
-const analyzed = ref(Boolean(demoCase.value.validation?.score));
+const analyzed = ref(false);
 
-const resultJson = computed(() =>
-  JSON.stringify(
-    {
-      claim_id: demoCase.value.id,
-      title: demoCase.value.title,
-      dispute_type: demoCase.value.disputeType,
-      jurisdiction: demoCase.value.jurisdiction,
-      completeness_score: demoCase.value.validation.score,
-      missing_fields: demoCase.value.validation.missing,
-      legal_facts: demoCase.value.validation.facts,
-      recommended_articles: demoCase.value.articles
-    },
-    null,
-    2
-  )
-);
+// Backend ClaimValidator natijasi (erkin JSON sxema bilan keladi).
+const result = ref(null);
+
+const view = computed(() => {
+  const r = result.value || {};
+  const pick = (...keys) => keys.map((k) => r[k]).find((v) => v != null);
+  return {
+    jurisdiction: pick('jurisdiction', 'yurisdiksiya', 'court', 'sud') || 'Aniqlanmadi',
+    disputeType: pick('dispute_type', 'nizo_turi', 'category', 'turi') || 'Aniqlanmadi',
+    score: pick('completeness_score', 'score', 'tayyorlik', 'completeness') ?? 0,
+    facts: pick('legal_facts', 'facts', 'huquqiy_faktlar', 'topilgan_faktlar') || [],
+    missing: pick('missing_fields', 'missing', 'kamchiliklar', 'tuzatish') || []
+  };
+});
+
+const resultJson = computed(() => JSON.stringify(result.value ?? { hint: 'Tahlil natijasi' }, null, 2));
 
 const selectDemoFile = () => {
   fileName.value = 'mehnat-kompensatsiya-arizasi.pdf';
-  ui.pushToast({
-    type: 'info',
-    title: 'PDF yuklandi',
-    text: 'Ariza matni OCR uchun tayyor.'
-  });
+  ui.pushToast({ type: 'info', title: 'Namuna matn', text: 'Quyidagi matn tahlil uchun tayyor.' });
 };
 
-const analyzeClaim = () => {
+const analyzeClaim = async () => {
+  if (analyzing.value) return;
+  if (!claimText.value.trim()) {
+    ui.pushToast({ type: 'error', title: 'Matn bo\'sh', text: 'Ariza matnini kiriting.' });
+    return;
+  }
   analyzing.value = true;
   analyzed.value = false;
-  window.setTimeout(() => {
-    demoCase.value = updateDemoCase({
-      sourceText: claimText.value,
-      validation: {
-        score: 82,
-        status: 'Tuzatish tavsiya qilinadi',
-        missing: ['Javobgar INN raqami', 'Davlat boji kvitansiyasi'],
-        facts: ['Mehnat shartnomasi mavjud', 'Kompensatsiya talabi ko‘rsatilgan']
-      }
-    });
-    analyzing.value = false;
+  try {
+    result.value = await validateClaim(claimText.value);
     analyzed.value = true;
     ui.pushToast({
       type: 'success',
       title: 'ClaimValidator tahlili tayyor',
-      text: 'Yurisdiksiya, kamchiliklar va huquqiy faktlar aniqlandi.'
+      text: 'Lokal AI yurisdiksiya, kamchilik va faktlarni aniqladi.'
     });
-  }, 700);
+  } catch (e) {
+    ui.pushToast({ type: 'error', title: 'Tahlil xatosi', text: e.message || 'Backend bilan bog\'lanib bo\'lmadi.' });
+  } finally {
+    analyzing.value = false;
+  }
 };
 
 const resetValidator = () => {
-  demoCase.value = resetDemoCase();
+  result.value = null;
   fileName.value = '';
   analyzed.value = false;
-  ui.pushToast({ type: 'info', title: 'Tahlil tozalandi', text: 'Demo ariza qayta tiklandi.' });
+  ui.pushToast({ type: 'info', title: 'Tozalandi', text: 'Tahlil tozalandi.' });
 };
 </script>
 
@@ -136,34 +131,30 @@ const resetValidator = () => {
                 <p class="eyebrow">2. ClaimValidator natijasi</p>
                 <h2>Ariza tayyorlik darajasi</h2>
               </div>
-              <strong class="score">{{ demoCase.validation.score }}%</strong>
+              <strong class="score">{{ view.score }}%</strong>
             </div>
             <div class="result-grid">
               <BaseCard variant="filled">
                 <CheckCircle2 :size="22" :stroke-width="1.5" />
                 <h3>Yurisdiksiya</h3>
-                <p>{{ demoCase.jurisdiction }}</p>
+                <p>{{ view.jurisdiction }}</p>
               </BaseCard>
               <BaseCard variant="filled">
                 <FileText :size="22" :stroke-width="1.5" />
                 <h3>Nizo turi</h3>
-                <p>{{ demoCase.disputeType }}</p>
+                <p>{{ view.disputeType }}</p>
               </BaseCard>
             </div>
             <div class="result-columns">
               <div>
                 <h3>Topilgan huquqiy faktlar</h3>
-                <p v-for="fact in demoCase.validation.facts" :key="fact" class="result-row success">
+                <p v-for="(fact, i) in view.facts" :key="`f-${i}`" class="result-row success">
                   <CheckCircle2 :size="17" />{{ fact }}
                 </p>
               </div>
               <div>
                 <h3>Tuzatilishi kerak</h3>
-                <p
-                  v-for="item in demoCase.validation.missing"
-                  :key="item"
-                  class="result-row danger"
-                >
+                <p v-for="(item, i) in view.missing" :key="`m-${i}`" class="result-row danger">
                   <XCircle :size="17" />{{ item }}
                 </p>
               </div>

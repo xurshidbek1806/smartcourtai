@@ -1,4 +1,5 @@
 <script setup>
+import { computed, onMounted, ref } from 'vue';
 import {
   Activity,
   AlertTriangle,
@@ -16,14 +17,70 @@ import BaseCard from '@/components/ui/BaseCard.vue';
 import DataTable from '@/components/ui/DataTable.vue';
 import MetricCharts from '@/components/shared/MetricCharts.vue';
 import { adminNav } from '@/data/navigation';
-import { auditRows, kpis } from '@/data/mock';
+import { adminAiModels, adminAuditLog, adminStats, ensureAuth } from '@/lib/api';
+import { downloadDemoFile } from '@/services/demoActions';
+import { useUi } from '@/stores/ui';
 
-const health = [
-  { label: 'API Gateway', value: '99.98%', icon: Server, tone: 'green' },
-  { label: 'AI Queue', value: '31k', icon: Cpu, tone: 'blue' },
-  { label: 'Database', value: '64%', icon: Database, tone: 'blue' },
-  { label: 'Security', value: '1', icon: ShieldCheck, tone: 'red' }
-];
+const ui = useUi();
+const stats = ref(null);
+const models = ref(null);
+const records = ref([]);
+
+const load = async () => {
+  try {
+    await ensureAuth('admin');
+    const [s, m, a] = await Promise.all([
+      adminStats(),
+      adminAiModels().catch(() => null),
+      adminAuditLog(20).catch(() => [])
+    ]);
+    stats.value = s;
+    models.value = m;
+    records.value = a;
+  } catch (e) {
+    ui.pushToast({ type: 'error', title: 'Yuklab bo\'lmadi', text: e.message });
+  }
+};
+
+onMounted(load);
+
+const fmtTime = (iso) => {
+  try {
+    return new Date(iso).toLocaleTimeString('uz-UZ');
+  } catch {
+    return iso;
+  }
+};
+
+const kpis = computed(() => [
+  { label: 'Foydalanuvchilar', value: String(stats.value?.total_users ?? '—'), delta: 'jami' },
+  { label: 'Arizalar', value: String(stats.value?.total_claims ?? '—'), delta: 'jami' },
+  { label: 'Sud ishlari', value: String(stats.value?.total_cases ?? '—'), delta: 'jami' },
+  { label: 'AI vektorlar', value: String(models.value?.vector_store?.laws ?? '—'), delta: 'qonun' }
+]);
+
+const auditRows = computed(() =>
+  records.value.map((r) => [
+    fmtTime(r.created_at),
+    String(r.user_id ?? '—'),
+    r.action ?? '—',
+    r.entity_type ?? '—',
+    r.ip_address ?? '—',
+    r.status ?? 'OK'
+  ])
+);
+
+const health = computed(() => [
+  { label: 'Ollama', value: models.value?.ollama_available ? 'Faol' : 'O\'chiq', icon: Cpu, tone: models.value?.ollama_available ? 'green' : 'red' },
+  { label: 'Qonun vektorlari', value: String(models.value?.vector_store?.laws ?? 0), icon: Database, tone: 'blue' },
+  { label: 'Pretsedentlar', value: String(models.value?.vector_store?.precedents ?? 0), icon: Server, tone: 'blue' },
+  { label: 'Neo4j', value: models.value?.neo4j_available ? 'On' : 'Off', icon: ShieldCheck, tone: models.value?.neo4j_available ? 'green' : 'red' }
+]);
+
+const exportStats = () => {
+  downloadDemoFile('admin-stats.json', { stats: stats.value, models: models.value });
+  ui.pushToast({ type: 'success', title: 'Eksport', text: 'Statistika yuklab olindi.' });
+};
 </script>
 
 <template>
@@ -35,7 +92,7 @@ const health = [
           <h1>Platforma nazorati</h1>
           <p>Foydalanuvchi, AI, audit va infratuzilma holati.</p>
         </div>
-        <BaseButton variant="secondary" :icon="Download">Eksport</BaseButton>
+        <BaseButton variant="secondary" :icon="Download" @click="exportStats">Eksport</BaseButton>
       </header>
 
       <section class="metrics">
@@ -83,8 +140,10 @@ const health = [
                 ><BaseButton variant="ghost" :icon="Users" size="sm">Users</BaseButton></RouterLink
               >
             </div>
+            <p v-if="!auditRows.length" class="muted">Audit yozuvlari hali yo'q.</p>
             <DataTable
-              :columns="['Vaqt', 'Foydalanuvchi', 'Rol', 'Harakat', 'IP', 'Holat']"
+              v-else
+              :columns="['Vaqt', 'Foydalanuvchi', 'Harakat', 'Obyekt', 'IP', 'Holat']"
               :rows="auditRows"
             />
           </section>

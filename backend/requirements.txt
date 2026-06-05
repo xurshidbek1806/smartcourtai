@@ -37,11 +37,13 @@ neo4j==5.27.0
 
 # ─── Speech-to-Text (JustiScribe) ────────────────────────────
 faster-whisper==1.1.0
+requests==2.32.3  # faster-whisper model download dependency
 
 # ─── Document / evidence processing ──────────────────────────
 pypdf==5.1.0
 python-docx==1.1.2
 pillow==11.0.0
+fpdf2==2.8.1  # generate mock legal-corpus PDFs
 
 # ─── Utilities ───────────────────────────────────────────────
 python-dotenv==1.0.1

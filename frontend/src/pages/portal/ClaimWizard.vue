@@ -15,18 +15,20 @@ import {
   Upload
 } from 'lucide-vue-next';
 
+import { useRouter } from 'vue-router';
+
 import RoleShell from '@/layouts/RoleShell.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseCard from '@/components/ui/BaseCard.vue';
 import BaseInput from '@/components/ui/BaseInput.vue';
 import { portalNav } from '@/data/navigation';
-import { getDemoCase, updateDemoCase } from '@/services/demoCase';
 import { useUi } from '@/stores/ui';
-import { validateClaim } from '@/lib/api';
+import { createClaim, ensureAuth, submitClaim, uploadDocument, validateClaim } from '@/lib/api';
 
 const ui = useUi();
-const demoCase = ref(getDemoCase());
+const router = useRouter();
 const step = ref(1);
+const submitting = ref(false);
 
 const form = reactive({
   selectedType: 'Mehnat nizosi',
@@ -41,15 +43,16 @@ const form = reactive({
   eventDate: ''
 });
 
-const uploadedFiles = ref([
-  {
-    id: 1,
-    name: 'shartnoma.pdf',
-    size: '2.4 MB',
-    progress: 100,
-    result: 'AI: 3 ta huquqiy fakt aniqlandi.'
-  }
-]);
+// Uzbek label → backend DisputeType enum.
+const DISPUTE_MAP = {
+  'Fuqarolik nizosi': 'civil',
+  'Mehnat nizosi': 'labor',
+  'Iqtisodiy nizosi': 'economic',
+  'Oilaviy nizosi': 'family'
+};
+
+const fileInput = ref(null);
+const uploadedFiles = ref([]); // { id, name, size, file, progress, result }
 
 const validation = reactive({
   loading: false,
@@ -73,40 +76,40 @@ const prev = () => (step.value = Math.max(1, step.value - 1));
 const saveDraft = () => {
   window.localStorage.setItem(
     'smartcourt-claim-draft',
-    JSON.stringify({
-      step: step.value,
-      selectedType: selectedType.value,
-      partyType: partyType.value,
-      claimant: claimant.value,
-      respondent: respondent.value,
-      amount: amount.value,
-      claimTitle: claimTitle.value,
-      uploadedFiles: uploadedFiles.value
-    })
+    JSON.stringify({ step: step.value, form })
   );
-  ui.pushToast({
-    type: 'success',
-    title: 'Qoralama saqlandi',
-    text: 'Ariza qoralamasi lokal saqlandi.'
-  });
+  ui.pushToast({ type: 'success', title: 'Qoralama saqlandi', text: 'Ariza qoralamasi lokal saqlandi.' });
 };
 
-const addMockFile = () => {
-  const id = Date.now();
-  uploadedFiles.value.push({
-    id,
-    name: `dalil-${uploadedFiles.value.length + 1}.pdf`,
-    size: '1.8 MB',
-    progress: 42,
-    result: 'AI tahlil qilmoqda...'
-  });
-  window.setTimeout(() => {
-    const file = uploadedFiles.value.find((item) => item.id === id);
-    if (file) {
-      file.progress = 100;
-      file.result = 'AI: format to‘g‘ri, deepfake belgisi yo‘q.';
-    }
-  }, 700);
+const addParty = () => {
+  ui.pushToast({ type: 'info', title: 'Tomon', text: 'Bu demoda bitta javobgar qo\'llab-quvvatlanadi.' });
+};
+
+const tryMediation = () => {
+  router.push('/portal/mediation');
+};
+
+const fmtSize = (bytes) => {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+};
+
+const pickFiles = () => fileInput.value?.click();
+
+const onFilesSelected = (e) => {
+  const files = Array.from(e.target.files || []);
+  for (const f of files) {
+    uploadedFiles.value.push({
+      id: `${Date.now()}-${f.name}`,
+      name: f.name,
+      size: fmtSize(f.size),
+      file: f,
+      progress: 100,
+      result: 'Yuborishga tayyor'
+    });
+  }
+  e.target.value = '';
 };
 
 const removeFile = (id) => {
@@ -164,22 +167,60 @@ const runClaimValidator = async () => {
   }
 };
 
-const handleNext = () => {
-  if (step.value === 5) {
-    demoCase.value = updateDemoCase({
-      title: claimTitle.value,
-      disputeType: selectedType.value,
-      claimant: claimant.value,
-      respondent: respondent.value,
-      amount: amount.value,
-      evidence: uploadedFiles.value.map((file) => ({ name: file.name, status: file.result })),
-      decision: { status: 'Sudga qabul qilindi', executionStatus: 'Ijroga yuborilmagan' }
-    });
+const parseAmount = (raw) => {
+  const n = Number(String(raw).replace(/[^\d.]/g, ''));
+  return Number.isFinite(n) && n > 0 ? n : null;
+};
+
+const submitClaimFlow = async () => {
+  if (submitting.value) return;
+  if (!form.title.trim()) {
+    ui.pushToast({ type: 'error', title: 'Sarlavha kerak', text: '3-bosqichda ariza sarlavhasini kiriting.' });
+    step.value = 3;
+    return;
+  }
+  submitting.value = true;
+  try {
+    await ensureAuth('citizen');
+    const payload = {
+      dispute_type: DISPUTE_MAP[form.selectedType] || 'civil',
+      title: form.title,
+      description: form.description,
+      amount: parseAmount(form.amount),
+      currency: 'UZS',
+      location: form.address || null,
+      respondents: form.fullName ? { name: form.fullName, pinfl: form.pinfl, phone: form.phone } : null
+    };
+    const claim = await createClaim(payload);
+
+    // Real dalillarni yuklash (tanlangan fayllar bo'lsa).
+    for (const f of uploadedFiles.value) {
+      if (f.file) {
+        try {
+          await uploadDocument(f.file, { claimId: claim.id, analyze: true });
+        } catch (err) {
+          console.warn('upload failed', err);
+        }
+      }
+    }
+
+    await submitClaim(claim.id);
     ui.pushToast({
       type: 'success',
       title: 'Ariza yuborildi',
-      text: 'Sud tizimiga #2026-001234 raqami bilan qabul qilindi.'
+      text: `Sud tizimiga ${claim.reference || '#' + claim.id} raqami bilan qabul qilindi.`
     });
+    router.push(`/portal/claims/${claim.id}`);
+  } catch (e) {
+    ui.pushToast({ type: 'error', title: 'Yuborish xatosi', text: e.message || 'Backend bilan bog\'lanib bo\'lmadi.' });
+  } finally {
+    submitting.value = false;
+  }
+};
+
+const handleNext = () => {
+  if (step.value === 5) {
+    submitClaimFlow();
     return;
   }
   next();
@@ -214,13 +255,13 @@ const handleNext = () => {
 
       <div class="wizard-body">
         <main class="panel">
-          <BaseCard v-if="demoCase.validation?.score" variant="filled" class="validator-summary">
+          <BaseCard v-if="validation.data" variant="filled" class="validator-summary">
             <div>
               <p class="eyebrow">ClaimValidator natijasi</p>
-              <h3>{{ demoCase.validation.score }}% tayyor • {{ demoCase.jurisdiction }}</h3>
+              <h3>{{ validation.data.jurisdiction || 'Tahlil tayyor' }}</h3>
             </div>
             <RouterLink to="/portal/claim-validator">
-              <BaseButton variant="secondary" size="sm">Tahlilni ko‘rish</BaseButton>
+              <BaseButton variant="secondary" size="sm">To‘liq tahlil</BaseButton>
             </RouterLink>
           </BaseCard>
           <template v-if="step === 1">
@@ -356,19 +397,28 @@ const handleNext = () => {
 
           <template v-else-if="step === 4">
             <h2>4. Dalillar</h2>
+            <input
+              ref="fileInput"
+              type="file"
+              multiple
+              hidden
+              accept=".pdf,.docx,.txt,.jpg,.jpeg,.png,.mp3,.wav"
+              @change="onFilesSelected"
+            />
             <div
               class="upload"
               role="button"
               tabindex="0"
-              @click="addMockFile"
-              @keydown.enter="addMockFile"
-              @dragover.prevent
-              @drop.prevent="addMockFile"
+              @click="pickFiles"
+              @keydown.enter="pickFiles"
             >
               <Upload :size="34" :stroke-width="1.5" />
-              <strong>Fayllarni shu yerga tashlang</strong>
-              <p>PDF, JPG, PNG, MP3, MP4, DOCX • 50 MB gacha</p>
+              <strong>Fayllarni tanlash uchun bosing</strong>
+              <p>PDF, DOCX, TXT, JPG, PNG, MP3 • 50 MB gacha • AI tahlil qiladi</p>
             </div>
+            <p v-if="!uploadedFiles.length" class="muted" style="margin-top: 10px">
+              Dalil ixtiyoriy — fayl yuklamasdan ham davom etishingiz mumkin.
+            </p>
             <div class="file-list">
               <BaseCard
                 v-for="file in uploadedFiles"
@@ -408,8 +458,8 @@ const handleNext = () => {
 
           <footer class="wizard-actions">
             <BaseButton variant="secondary" :disabled="step === 1" @click="prev">Orqaga</BaseButton>
-            <BaseButton @click="handleNext">{{
-              step === 5 ? 'Yuborish' : 'Davom etish'
+            <BaseButton :loading="submitting" @click="handleNext">{{
+              step === 5 ? (submitting ? 'Yuborilmoqda...' : 'Yuborish') : 'Davom etish'
             }}</BaseButton>
           </footer>
         </main>

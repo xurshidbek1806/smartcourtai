@@ -1,92 +1,68 @@
 <script setup>
-import { ref } from 'vue';
+import { onBeforeUnmount, ref } from 'vue';
 import { Copy, Mic, Paperclip, RefreshCcw, Send, Sparkles } from 'lucide-vue-next';
 
 import RoleShell from '@/layouts/RoleShell.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { portalNav } from '@/data/navigation';
 import { useUi } from '@/stores/ui';
+import { ensureAuth, streamAssistant } from '@/lib/api';
 
 const ui = useUi();
 const message = ref('');
 const streaming = ref(false);
+const lastPrompt = ref('');
 const messages = ref([
-  { role: 'ai', text: 'Assalomu alaykum. Qaysi huquqiy masalada yordam beray?' },
-  { role: 'user', text: 'Mehnat shartnomam bekor qilindi. Davlat boji qancha?' },
-  {
-    role: 'ai',
-    text: 'Da’vo summasi va ish turiga qarab hisoblanadi. Mehnat nizolarida ayrim toifalar bo‘yicha imtiyozlar mavjud. Manba: Mehnat kodeksi va davlat boji normalari.'
-  }
+  { role: 'ai', text: 'Assalomu alaykum. Qaysi huquqiy masalada yordam beray? Mehnat, oila, fuqarolik yoki jinoyat huquqi bo\'yicha savol bering.' }
 ]);
+
+let controller = null;
 
 const sendMessage = () => {
   const prompt = message.value.trim();
   if (!prompt || streaming.value) return;
   messages.value.push({ role: 'user', text: prompt });
   message.value = '';
-  streamAnswer();
+  streamAnswer(prompt);
 };
 
-const streamAnswer = () => {
+const streamAnswer = async (prompt) => {
   if (streaming.value) return;
+  lastPrompt.value = prompt;
   streaming.value = true;
+  await ensureAuth('citizen');
   const aiMessage = { role: 'ai', text: '' };
   messages.value.push(aiMessage);
-  const tokens = [
-    'Savolingiz ',
-    'qabul ',
-    'qilindi. ',
-    'Mehnat ',
-    'kodeksi ',
-    'va ',
-    'o‘xshash ',
-    'pretsedentlar ',
-    'asosida ',
-    'javob: ',
-    'avval ',
-    'ariza ',
-    'turini ',
-    'aniqlang, ',
-    'keyin ',
-    'davlat ',
-    'boji ',
-    'imtiyozlarini ',
-    'tekshiring. ',
-    'Zarur ',
-    'hujjatlar: ',
-    'shartnoma, ',
-    'buyruq ',
-    'va ',
-    'to‘lov ',
-    'dalillari.'
-  ];
-  let index = 0;
-  const timer = window.setInterval(() => {
-    aiMessage.text += tokens[index];
-    index += 1;
-    if (index >= tokens.length) {
-      window.clearInterval(timer);
+
+  controller = streamAssistant({ message: prompt, use_context: true }, (event) => {
+    if (event.type === 'error') {
       streaming.value = false;
-      ui.pushToast({
-        type: 'success',
-        title: 'AI javob tayyor',
-        text: 'Javob citationlar bilan yakunlandi.'
-      });
+      ui.pushToast({ type: 'error', title: 'AI xatosi', text: event.message || 'Bog\'lanib bo\'lmadi.' });
+      return;
     }
-  }, 75);
+    if (event.type === 'done') {
+      streaming.value = false;
+      ui.pushToast({ type: 'success', title: 'AI javob tayyor', text: 'Lokal Llama javob qaytardi.' });
+      return;
+    }
+    if (event.content) aiMessage.text += event.content;
+  });
+};
+
+const regenerate = () => {
+  if (streaming.value || !lastPrompt.value) return;
+  streamAnswer(lastPrompt.value);
 };
 
 const copyMessage = () => {
   const lastAnswer = [...messages.value].reverse().find((item) => item.role === 'ai')?.text ?? '';
   navigator.clipboard?.writeText(lastAnswer);
-  ui.pushToast({
-    type: 'success',
-    title: 'Nusxa olindi',
-    text: 'AI javobi clipboard uchun tayyor.'
-  });
+  ui.pushToast({ type: 'success', title: 'Nusxa olindi', text: 'AI javobi clipboard uchun tayyor.' });
 };
 
 const startNewChat = () => {
+  if (controller) controller.abort();
+  streaming.value = false;
   messages.value = [{ role: 'ai', text: 'Assalomu alaykum. Qaysi huquqiy masalada yordam beray?' }];
   message.value = '';
   ui.pushToast({ type: 'success', title: 'Yangi chat', text: 'Yangi suhbat boshlandi.' });
@@ -98,17 +74,16 @@ const useSuggestion = (text) => {
 };
 
 const attachFile = () => {
-  ui.pushToast({
-    type: 'info',
-    title: 'Fayl biriktirildi',
-    text: 'Demo hujjat suhbatga qo‘shildi.'
-  });
+  ui.pushToast({ type: 'info', title: 'Fayl', text: 'Hujjat tahlili uchun EvidenceAnalyzer sahifasidan foydalaning.' });
 };
 
 const recordVoice = () => {
-  message.value = 'Ovozli savol: davlat boji va zarur hujjatlar haqida ma’lumot bering.';
-  ui.pushToast({ type: 'info', title: 'Ovozli savol', text: 'Demo transkripsiya tayyorlandi.' });
+  ui.pushToast({ type: 'info', title: 'Ovozli savol', text: 'Ovozli kiritish Jonli majlis modulida mavjud.' });
 };
+
+onBeforeUnmount(() => {
+  if (controller) controller.abort();
+});
 </script>
 
 <template>
@@ -130,14 +105,10 @@ const recordVoice = () => {
             <Sparkles v-if="item.role === 'ai'" :size="20" :stroke-width="1.5" />
             <div>
               <p>{{ item.text }}</p>
-              <div v-if="item.role === 'ai'" class="citations">
-                <span>Mehnat kodeksi 167</span>
-                <span>Pretsedent #2025-004982</span>
-              </div>
-              <div v-if="item.role === 'ai'" class="message-actions">
-                <button type="button" @click="copyMessage"><Copy :size="15" />Copy</button>
-                <button type="button" @click="streamAnswer">
-                  <RefreshCcw :size="15" />Regenerate
+              <div v-if="item.role === 'ai' && item.text" class="message-actions">
+                <button type="button" @click="copyMessage"><Copy :size="15" />Nusxa</button>
+                <button type="button" @click="regenerate">
+                  <RefreshCcw :size="15" />Qayta
                 </button>
               </div>
             </div>

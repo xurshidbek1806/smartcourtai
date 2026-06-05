@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
+import { ensureAuth, roleForPath } from '@/lib/api';
 import LandingPage from '@/pages/marketing/LandingPage.vue';
 import MarketingPage from '@/pages/marketing/MarketingPage.vue';
 import ProblemsPage from '@/pages/marketing/ProblemsPage.vue';
@@ -18,6 +19,7 @@ import JudgeGeneric from '@/pages/judge/JudgeGeneric.vue';
 import AdminDashboard from '@/pages/admin/AdminDashboard.vue';
 import AiModels from '@/pages/admin/AiModels.vue';
 import AuditLog from '@/pages/admin/AuditLog.vue';
+import CorpusUpload from '@/pages/admin/CorpusUpload.vue';
 import AdminGeneric from '@/pages/admin/AdminGeneric.vue';
 import OversightDashboard from '@/pages/oversight/OversightDashboard.vue';
 import CorruptionGraph from '@/pages/oversight/CorruptionGraph.vue';
@@ -220,6 +222,7 @@ const routes = [
   ...judgeGeneric,
   { path: '/admin/dashboard', component: AdminDashboard },
   { path: '/admin/ai-models', component: AiModels },
+  { path: '/admin/corpus', component: CorpusUpload },
   { path: '/admin/security/audit-log', component: AuditLog },
   ...adminGeneric,
   { path: '/oversight/dashboard', component: OversightDashboard },
@@ -241,4 +244,13 @@ export const router = createRouter({
   scrollBehavior() {
     return { top: 0 };
   }
+});
+
+// Auto demo-login for role-protected areas so every backend call is authed.
+const PROTECTED = ['/portal', '/judge', '/admin', '/oversight', '/settings'];
+router.beforeEach(async (to) => {
+  if (PROTECTED.some((p) => to.path.startsWith(p))) {
+    await ensureAuth(roleForPath(to.path));
+  }
+  return true;
 });

@@ -1,14 +1,12 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
-import { useI18n } from 'vue-i18n';
 import { useColorMode } from '@vueuse/core';
 import {
   Bell,
   CalendarDays,
   Command,
   CreditCard,
-  Globe2,
   LogOut,
   Mail,
   Moon,
@@ -20,7 +18,9 @@ import {
 
 import SideDrawer from '@/components/shared/SideDrawer.vue';
 import BaseBadge from '@/components/ui/BaseBadge.vue';
+import BrandLogo from '@/components/ui/BrandLogo.vue';
 import { useUi } from '@/stores/ui';
+import { logout as apiLogout } from '@/lib/api';
 
 const props = defineProps({
   title: { type: String, required: true },
@@ -30,7 +30,6 @@ const props = defineProps({
 
 const router = useRouter();
 const ui = useUi();
-const { locale } = useI18n();
 const mode = useColorMode({
   selector: 'html',
   attribute: 'data-theme',
@@ -71,15 +70,6 @@ const tourSteps = [
   { title: 'Settings', text: 'Til, dark mode va profil sozlamalari profil menyusida.' }
 ];
 
-const setLanguage = (lang) => {
-  locale.value = lang;
-  ui.pushToast({
-    type: 'success',
-    title: 'Til almashtirildi',
-    text: `${lang.toUpperCase()} rejimi yoqildi.`
-  });
-};
-
 const toggleTheme = () => {
   mode.value = mode.value === 'dark' ? 'light' : 'dark';
   ui.pushToast({
@@ -91,6 +81,7 @@ const toggleTheme = () => {
 
 const logout = () => {
   userMenuOpen.value = false;
+  apiLogout();
   ui.pushToast({ type: 'success', title: 'Chiqish', text: 'Sessiya yopildi.' });
   router.push('/login');
 };
@@ -105,7 +96,7 @@ const finishTour = () => {
   <div class="role-shell">
     <aside class="sidebar">
       <RouterLink class="brand" to="/">
-        <span class="brand-mark">SC</span>
+        <BrandLogo :size="34" />
         <span>SmartCourt AI</span>
       </RouterLink>
       <nav aria-label="Asosiy navigatsiya">
@@ -193,37 +184,6 @@ const finishTour = () => {
             <section v-if="userMenuOpen" class="dropdown">
               <RouterLink to="/portal/profile"><UserCircle :size="16" />Profil</RouterLink>
               <RouterLink to="/settings/account"><Settings :size="16" />Sozlamalar</RouterLink>
-              <div class="language-row">
-                <Globe2 :size="16" />
-                <button
-                  type="button"
-                  :class="{ active: locale === 'uz' }"
-                  @click="setLanguage('uz')"
-                >
-                  UZ
-                </button>
-                <button
-                  type="button"
-                  :class="{ active: locale === 'ru' }"
-                  @click="setLanguage('ru')"
-                >
-                  RU
-                </button>
-                <button
-                  type="button"
-                  :class="{ active: locale === 'en' }"
-                  @click="setLanguage('en')"
-                >
-                  EN
-                </button>
-                <button
-                  type="button"
-                  :class="{ active: locale === 'uz-cyrl' }"
-                  @click="setLanguage('uz-cyrl')"
-                >
-                  ЎЗ
-                </button>
-              </div>
               <button type="button" class="dropdown-button" @click="toggleTheme">
                 <Moon :size="16" />Dark mode
               </button>

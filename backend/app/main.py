@@ -20,6 +20,23 @@ async def lifespan(app: FastAPI):
         logger.info(f"Ollama OK — models: {await llm.list_models()}")
     else:
         logger.warning("Ollama NOT available — AI endpoints will fail until it's up.")
+
+    # Pre-warm the Whisper model in a background thread so the first live-hearing
+    # clip transcribes immediately instead of paying a one-time ~8s load cost
+    # (which previously dropped the first segment before the WS could deliver it).
+    import asyncio
+
+    async def _warm_whisper():
+        try:
+            from app.services.whisper_service import _load_model
+
+            await asyncio.to_thread(_load_model)
+            logger.info("Whisper model pre-warmed (JustiScribe ready).")
+        except Exception as exc:  # noqa: BLE001
+            logger.warning(f"Whisper pre-warm skipped: {exc}")
+
+    asyncio.create_task(_warm_whisper())
+
     yield
     logger.info("Shutting down.")
 

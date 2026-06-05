@@ -1,24 +1,18 @@
 <script setup>
 import { ref } from 'vue';
 import { RouterLink } from 'vue-router';
-import { useI18n } from 'vue-i18n';
-import { Languages, Menu } from 'lucide-vue-next';
+import { Menu } from 'lucide-vue-next';
 
 import { marketingLinks } from '@/data/navigation';
+import BrandLogo from '@/components/ui/BrandLogo.vue';
 
-const { locale, t } = useI18n();
-const open = ref(false);
 const mobileOpen = ref(false);
-const setLanguage = (lang) => {
-  locale.value = lang;
-  open.value = false;
-};
 </script>
 
 <template>
   <header class="glass-nav">
     <RouterLink class="brand" to="/">
-      <span class="brand-mark">SC</span>
+      <BrandLogo :size="30" />
       <span>SmartCourt AI</span>
     </RouterLink>
     <nav aria-label="Marketing">
@@ -27,30 +21,7 @@ const setLanguage = (lang) => {
       }}</RouterLink>
     </nav>
     <div class="actions">
-      <div class="lang-menu">
-        <button aria-label="Til tanlash" type="button" class="icon" @click="open = !open">
-          <Languages :size="18" :stroke-width="1.5" />
-        </button>
-        <div v-if="open" class="lang-popover">
-          <button type="button" :class="{ active: locale === 'uz' }" @click="setLanguage('uz')">
-            UZ
-          </button>
-          <button type="button" :class="{ active: locale === 'ru' }" @click="setLanguage('ru')">
-            RU
-          </button>
-          <button type="button" :class="{ active: locale === 'en' }" @click="setLanguage('en')">
-            EN
-          </button>
-          <button
-            type="button"
-            :class="{ active: locale === 'uz-cyrl' }"
-            @click="setLanguage('uz-cyrl')"
-          >
-            ЎЗ
-          </button>
-        </div>
-      </div>
-      <RouterLink class="login-link" to="/login">{{ t('app.login') }}</RouterLink>
+      <RouterLink class="login-link" to="/login">Tizimga kirish</RouterLink>
       <button aria-label="Menyu" type="button" class="icon menu" @click="mobileOpen = !mobileOpen">
         <Menu :size="18" :stroke-width="1.5" />
       </button>
@@ -64,7 +35,7 @@ const setLanguage = (lang) => {
       >
         {{ link.label }}
       </RouterLink>
-      <RouterLink to="/login" @click="mobileOpen = false">{{ t('app.login') }}</RouterLink>
+      <RouterLink to="/login" @click="mobileOpen = false">Tizimga kirish</RouterLink>
     </nav>
   </header>
 </template>

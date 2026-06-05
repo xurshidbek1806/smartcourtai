@@ -22,6 +22,7 @@ import {
   Settings,
   Shield,
   Sparkles,
+  Upload,
   Users
 } from 'lucide-vue-next';
 
@@ -63,6 +64,7 @@ export const adminNav = [
   { label: 'Foydalanuvchilar', to: '/admin/users', icon: Users },
   { label: 'Sudlar', to: '/admin/courts', icon: Landmark },
   { label: 'AI modellari', to: '/admin/ai-models', icon: Bot },
+  { label: 'RAG korpusi', to: '/admin/corpus', icon: Upload },
   { label: 'Audit log', to: '/admin/security/audit-log', icon: Shield },
   { label: 'Integratsiyalar', to: '/admin/integrations', icon: Network },
   { label: 'Database', to: '/admin/database', icon: Database },

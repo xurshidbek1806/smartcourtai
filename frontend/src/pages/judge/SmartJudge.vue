@@ -88,6 +88,7 @@ const generateDraft = () => {
         case 'token':
           draft.value += event.content;
           tokenCount.value += 1;
+          if (tokenCount.value % 10 === 0) console.log(`[stream] ${tokenCount.value} tokens, ${draft.value.length} chars`);
           break;
         case 'done':
           streaming.value = false;
@@ -204,17 +205,16 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- Draft -->
-        <div class="editor" :contenteditable="!streaming" :class="{ streaming }">
-          <template v-if="draft || streaming">
-            {{ draft }}<span v-if="streaming" class="cursor" />
-          </template>
-          <template v-else>
-            <p class="empty">
-              Yuqorida ish holatlarini to'ldiring va "Qoralama yaratish" tugmasini bosing.
-              Llama 3.2:3b modeli RAG orqali tegishli qonun moddalarini topib, real vaqtda
-              sud qarori qoralamasini token-by-token generatsiya qiladi.
-            </p>
-          </template>
+        <div v-if="draft || streaming" class="editor" :class="{ streaming }">
+          <pre class="draft-text" v-text="draft" />
+          <span v-if="streaming" class="cursor" />
+        </div>
+        <div v-else class="editor">
+          <p class="empty">
+            Yuqorida ish holatlarini to'ldiring va "Qoralama yaratish" tugmasini bosing.
+            Llama 3.2:3b modeli RAG orqali tegishli qonun moddalarini topib, real vaqtda
+            sud qarori qoralamasini token-by-token generatsiya qiladi.
+          </p>
         </div>
 
         <div class="toolbar">
@@ -333,8 +333,17 @@ h1 {
   font-size: 16px;
   line-height: 1.7;
   outline: 0;
+  color: var(--gray-900);
+}
+
+.draft-text {
+  margin: 0;
   white-space: pre-wrap;
   word-break: break-word;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: var(--gray-900);
 }
 
 .editor.streaming {

@@ -103,18 +103,23 @@ class OllamaClient:
                 "POST", f"{self.base_url}/api/chat", json=payload
             ) as resp:
                 resp.raise_for_status()
-                async for line in resp.aiter_lines():
-                    if not line.strip():
-                        continue
-                    try:
-                        chunk = json.loads(line)
-                    except json.JSONDecodeError:
-                        continue
-                    token = chunk.get("message", {}).get("content", "")
-                    if token:
-                        yield token
-                    if chunk.get("done"):
-                        break
+                buffer = ""
+                async for chunk_bytes in resp.aiter_bytes():
+                    buffer += chunk_bytes.decode("utf-8", errors="ignore")
+                    while "\n" in buffer:
+                        line, buffer = buffer.split("\n", 1)
+                        line = line.strip()
+                        if not line:
+                            continue
+                        try:
+                            chunk = json.loads(line)
+                        except json.JSONDecodeError:
+                            continue
+                        token = chunk.get("message", {}).get("content", "")
+                        if token:
+                            yield token
+                        if chunk.get("done"):
+                            return
 
     # ── Embeddings ────────────────────────────────────────────
     async def embed(self, text: str, model: Optional[str] = None) -> list[float]:

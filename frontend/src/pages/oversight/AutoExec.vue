@@ -16,12 +16,17 @@ import BaseCard from '@/components/ui/BaseCard.vue';
 import BaseBadge from '@/components/ui/BaseBadge.vue';
 import { oversightNav } from '@/data/navigation';
 import { getDemoCase, updateDemoCase } from '@/services/demoCase';
+import { aiAutoExec, ensureAuth } from '@/lib/api';
 import { useUi } from '@/stores/ui';
 
 const ui = useUi();
 const demoCase = ref(getDemoCase());
 const running = ref(false);
 const timer = ref(null);
+const backendNote = ref('');
+
+const SYS_ICON = { Bank: Landmark, MIB: Building2, FHDYo: Send, SmartCourt: ShieldCheck };
+
 const steps = ref([
   { title: 'Qaror kuchga kirdi', system: 'SmartCourt', status: 'Tayyor', icon: ShieldCheck },
   { title: 'Ijro ishi ochildi', system: 'MIB', status: 'Kutilmoqda', icon: Building2 },
@@ -32,18 +37,38 @@ const steps = ref([
 const completed = computed(() => steps.value.filter((step) => step.status === 'Bajarildi').length);
 const progress = computed(() => `${(completed.value / steps.value.length) * 100}%`);
 
-const startExecution = () => {
+const startExecution = async () => {
   if (running.value) return;
   running.value = true;
-  steps.value = steps.value.map((step, index) => ({
-    ...step,
-    status: index === 0 ? 'Bajarildi' : 'Kutilmoqda'
-  }));
+  try {
+    await ensureAuth('oversight');
+    // Backend AutoExec — qaror ijrosini bank/MIB/FHDYo bo'yicha ishga tushiradi.
+    const caseId = demoCase.value?.decision?.caseId || 1;
+    const res = await aiAutoExec(caseId);
+    backendNote.value = res.note || '';
+    // Backenddan kelgan bosqichlardan qadamlar yasaymiz.
+    const apiSteps = (res.steps || []).map((s) => ({
+      title: s.action,
+      system: s.system,
+      status: 'Kutilmoqda',
+      icon: SYS_ICON[s.system] || ShieldCheck
+    }));
+    steps.value = [
+      { title: 'Qaror kuchga kirdi', system: 'SmartCourt', status: 'Bajarildi', icon: ShieldCheck },
+      ...apiSteps
+    ];
+  } catch (e) {
+    running.value = false;
+    ui.pushToast({ type: 'error', title: 'AutoExec xatosi', text: e.message });
+    return;
+  }
 
   let index = 1;
   timer.value = window.setInterval(() => {
-    steps.value[index].status = 'Bajarildi';
-    index += 1;
+    if (index < steps.value.length) {
+      steps.value[index].status = 'Bajarildi';
+      index += 1;
+    }
     if (index >= steps.value.length) {
       window.clearInterval(timer.value);
       timer.value = null;
@@ -54,10 +79,10 @@ const startExecution = () => {
       ui.pushToast({
         type: 'success',
         title: 'AutoExec yakunlandi',
-        text: 'Qaror demo integratsiyalar orqali ijro qilindi.'
+        text: 'Qaror bank/MIB/FHDYo integratsiyalari orqali ijroga yuborildi.'
       });
     }
-  }, 550);
+  }, 650);
 };
 
 const resetExecution = () => {

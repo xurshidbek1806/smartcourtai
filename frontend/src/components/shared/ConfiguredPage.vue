@@ -8,6 +8,7 @@ import {
   FileText,
   PanelRight,
   Search,
+  Sparkles,
   SlidersHorizontal
 } from 'lucide-vue-next';
 
@@ -18,6 +19,7 @@ import BaseInput from '@/components/ui/BaseInput.vue';
 import DataTable from '@/components/ui/DataTable.vue';
 import BaseModal from '@/components/ui/BaseModal.vue';
 import { runDemoAction } from '@/services/demoActions';
+import { LOADERS, RUNNERS } from '@/services/aiRunners';
 import { useUi } from '@/stores/ui';
 
 const props = defineProps({
@@ -36,38 +38,80 @@ const page = computed(
 const formValues = ref({});
 const selectedCard = ref(null);
 
+// Real backend wiring for this route (if any).
+const runner = computed(() => RUNNERS[pattern.value] || RUNNERS[route.path] || null);
+const loader = computed(() => LOADERS[pattern.value] || LOADERS[route.path] || null);
+const running = ref(false);
+const apiResult = ref(null);
+const liveTable = ref(null);
+const liveLoading = ref(false);
+
+// Fields shown in the form: runner fields take priority over static config.
+const fields = computed(() => {
+  if (runner.value) return runner.value.fields;
+  return (page.value.formFields ?? []).map((f) => ({ key: f, label: f, type: 'text' }));
+});
+
 const storageKey = computed(() => `smartcourt-page:${route.path}`);
 
 const loadForm = () => {
   const saved = JSON.parse(window.localStorage.getItem(storageKey.value) || '{}');
-  formValues.value = Object.fromEntries(
-    (page.value.formFields ?? []).map((field) => [field, saved[field] ?? ''])
-  );
+  formValues.value = Object.fromEntries(fields.value.map((f) => [f.key, saved[f.key] ?? '']));
+  apiResult.value = null;
 };
 
-watch(page, loadForm, { immediate: true });
+const loadLive = async () => {
+  liveTable.value = null;
+  if (!loader.value) return;
+  liveLoading.value = true;
+  try {
+    liveTable.value = await loader.value();
+  } catch (e) {
+    ui.pushToast({ type: 'error', title: 'Yuklab bo\'lmadi', text: e.message });
+  } finally {
+    liveLoading.value = false;
+  }
+};
+
+watch(
+  page,
+  () => {
+    loadForm();
+    loadLive();
+  },
+  { immediate: true }
+);
+
+const tableData = computed(() => liveTable.value || page.value.table || null);
 
 const saveForm = () => {
   window.localStorage.setItem(storageKey.value, JSON.stringify(formValues.value));
-  ui.pushToast({
-    type: 'success',
-    title: 'Ma’lumot saqlandi',
-    text: 'Demo ma’lumotlar yangilandi.'
-  });
 };
 
 const resetForm = () => {
-  formValues.value = Object.fromEntries((page.value.formFields ?? []).map((field) => [field, '']));
+  formValues.value = Object.fromEntries(fields.value.map((f) => [f.key, '']));
+  apiResult.value = null;
   window.localStorage.removeItem(storageKey.value);
-  ui.pushToast({
-    type: 'info',
-    title: 'Forma tozalandi',
-    text: 'Kiritilgan qiymatlar tozalandi.'
-  });
+  ui.pushToast({ type: 'info', title: 'Tozalandi', text: 'Kiritilgan qiymatlar tozalandi.' });
 };
 
-const runAction = (label) => {
-  if (page.value.formFields?.length) saveForm();
+const runAction = async (label) => {
+  if (fields.value.length) saveForm();
+  // Real AI runner for this route?
+  if (runner.value) {
+    if (running.value) return;
+    running.value = true;
+    apiResult.value = null;
+    try {
+      apiResult.value = await runner.value.run(formValues.value);
+      ui.pushToast({ type: 'success', title: 'AI natijasi tayyor', text: apiResult.value.title || 'Bajarildi' });
+    } catch (e) {
+      ui.pushToast({ type: 'error', title: 'AI xatosi', text: e.message || 'Bog\'lanib bo\'lmadi.' });
+    } finally {
+      running.value = false;
+    }
+    return;
+  }
   runDemoAction({ label, ui, route, payload: formValues.value });
 };
 </script>
@@ -91,12 +135,13 @@ const runAction = (label) => {
             {{ page.secondaryAction }}
           </BaseButton>
           <BaseButton
-            v-if="page.primaryAction"
-            :icon="ArrowRight"
+            v-if="page.primaryAction || runner"
+            :icon="runner ? Sparkles : ArrowRight"
             icon-position="right"
-            @click="runAction(page.primaryAction)"
+            :loading="running"
+            @click="runAction(page.primaryAction || 'AI tahlil')"
           >
-            {{ page.primaryAction }}
+            {{ runner ? (running ? 'AI ishlamoqda...' : 'AI tahlil') : page.primaryAction }}
           </BaseButton>
         </div>
       </header>
@@ -117,33 +162,48 @@ const runAction = (label) => {
 
       <div class="content-grid">
         <main class="grid">
-          <section v-if="page.formFields?.length" class="panel">
+          <section v-if="fields.length" class="panel">
             <div class="panel-header">
-              <h2>Ma’lumotlar</h2>
+              <h2>{{ runner ? 'AI kiritish' : 'Ma’lumotlar' }}</h2>
               <ClipboardList :size="22" :stroke-width="1.5" />
             </div>
             <div class="grid grid-2">
-              <BaseInput
-                v-for="field in page.formFields"
-                :key="field"
-                v-model="formValues[field]"
-                :label="field"
-                :placeholder="field"
-                :icon="field.toLowerCase().includes('qidir') ? Search : undefined"
-              />
+              <template v-for="field in fields" :key="field.key">
+                <label v-if="field.type === 'textarea'" class="full textarea-field">
+                  <span>{{ field.label }}</span>
+                  <textarea v-model="formValues[field.key]" rows="5" :placeholder="field.label" />
+                </label>
+                <BaseInput
+                  v-else
+                  v-model="formValues[field.key]"
+                  :label="field.label"
+                  :placeholder="field.label"
+                  :icon="field.label.toLowerCase().includes('qidir') ? Search : undefined"
+                />
+              </template>
             </div>
             <div class="form-actions">
               <BaseButton variant="secondary" @click="resetForm">Tozalash</BaseButton>
-              <BaseButton @click="saveForm">Saqlash</BaseButton>
+              <BaseButton :icon="runner ? Sparkles : undefined" :loading="running" @click="runAction(page.primaryAction || 'AI tahlil')">
+                {{ runner ? 'AI tahlil' : 'Saqlash' }}
+              </BaseButton>
+            </div>
+
+            <div v-if="apiResult" class="ai-output">
+              <p class="eyebrow">AI natijasi</p>
+              <h3>{{ apiResult.title }}</h3>
+              <p v-for="(line, i) in apiResult.lines" :key="i" class="ai-line">
+                <CheckCircle2 :size="15" />{{ line }}
+              </p>
             </div>
           </section>
 
-          <section v-if="page.table" class="panel">
+          <section v-if="tableData" class="panel">
             <div class="panel-header">
-              <h2>Jadval</h2>
+              <h2>{{ liveLoading ? 'Yuklanmoqda...' : 'Jadval' }}</h2>
               <FileText :size="22" :stroke-width="1.5" />
             </div>
-            <DataTable :columns="page.table.columns" :rows="page.table.rows" />
+            <DataTable :columns="tableData.columns" :rows="tableData.rows" />
           </section>
 
           <section v-if="page.cards?.length" class="grid grid-3">
@@ -305,6 +365,61 @@ h1 {
   justify-content: flex-end;
   gap: 10px;
   margin-top: 18px;
+}
+
+.full {
+  grid-column: 1 / -1;
+}
+
+.textarea-field {
+  display: grid;
+  gap: 8px;
+  color: var(--gray-700);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.textarea-field textarea {
+  resize: vertical;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  color: var(--gray-900);
+  padding: 12px;
+  outline: 0;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.ai-output {
+  margin-top: 18px;
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--stat-blue);
+  border-radius: var(--radius-md);
+  background: var(--gray-100);
+  padding: 16px;
+}
+
+.ai-output h3 {
+  margin: 6px 0 12px;
+  font-size: 18px;
+}
+
+.ai-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 6px 0;
+  color: var(--gray-700);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.ai-line svg {
+  margin-top: 3px;
+  color: var(--stat-green);
+  flex-shrink: 0;
 }
 
 @media (max-width: 980px) {

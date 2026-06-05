@@ -1,8 +1,12 @@
+<script setup>
+import BrandLogo from '@/components/ui/BrandLogo.vue';
+</script>
+
 <template>
   <footer class="footer">
     <div class="container footer-grid">
       <div>
-        <strong>SmartCourt AI</strong>
+        <strong class="footer-brand"><BrandLogo :size="26" /> SmartCourt AI</strong>
         <p>O‘zbekiston sud tizimi uchun AI ekotizimi.</p>
       </div>
       <div>
@@ -40,6 +44,12 @@
   display: grid;
   grid-template-columns: 1.5fr repeat(3, 1fr);
   gap: 26px;
+}
+
+.footer-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 h3,

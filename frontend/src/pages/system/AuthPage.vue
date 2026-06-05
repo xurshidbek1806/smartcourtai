@@ -4,14 +4,18 @@ import { useRoute, useRouter } from 'vue-router';
 import { Fingerprint, KeyRound, ShieldCheck } from 'lucide-vue-next';
 
 import BaseInput from '@/components/ui/BaseInput.vue';
+import BrandLogo from '@/components/ui/BrandLogo.vue';
 import { useUi } from '@/stores/ui';
+import { ensureAuth, login, roleForPath } from '@/lib/api';
 
 const route = useRoute();
 const router = useRouter();
 const ui = useUi();
 const pinfl = ref('');
 const password = ref('');
+const busy = ref(false);
 
+const role = computed(() => roleForPath(route.path));
 const destination = computed(() => {
   if (route.path.includes('/judge')) return '/judge/dashboard';
   if (route.path.includes('/admin')) return '/admin/dashboard';
@@ -19,13 +23,25 @@ const destination = computed(() => {
   return '/portal/dashboard';
 });
 
-const submitLogin = () => {
-  ui.pushToast({
-    type: 'success',
-    title: 'Tizimga kirish muvaffaqiyatli',
-    text: 'Dashboardga yo‘naltirilmoqda.'
-  });
-  router.push(destination.value);
+const submitLogin = async () => {
+  if (busy.value) return;
+  busy.value = true;
+  try {
+    const id = pinfl.value.trim();
+    if (id.includes('@') && password.value) {
+      // Email/parol bilan real login.
+      await login(id, password.value);
+    } else {
+      // Demo rejimi — rolga mos seed foydalanuvchi bilan kirish.
+      await ensureAuth(role.value);
+    }
+    ui.pushToast({ type: 'success', title: 'Tizimga kirildi', text: 'Dashboardga yo‘naltirilmoqda.' });
+    router.push(destination.value);
+  } catch (e) {
+    ui.pushToast({ type: 'error', title: 'Kirish xatosi', text: e.message || 'Email yoki parol noto‘g‘ri.' });
+  } finally {
+    busy.value = false;
+  }
 };
 </script>
 
@@ -33,7 +49,7 @@ const submitLogin = () => {
   <main class="auth">
     <section class="auth-card">
       <RouterLink class="brand" to="/">
-        <span class="brand-mark">SC</span>
+        <BrandLogo :size="36" />
         <span>SmartCourt AI</span>
       </RouterLink>
       <p class="eyebrow">{{ route.path.includes('register') ? 'Ro‘yxatdan o‘tish' : 'Kirish' }}</p>

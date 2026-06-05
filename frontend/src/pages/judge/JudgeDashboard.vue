@@ -1,4 +1,5 @@
 <script setup>
+import { computed, onMounted, ref } from 'vue';
 import {
   CalendarDays,
   FileSearch,
@@ -15,14 +16,34 @@ import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseCard from '@/components/ui/BaseCard.vue';
 import DataTable from '@/components/ui/DataTable.vue';
 import { judgeNav } from '@/data/navigation';
-import { claims } from '@/data/mock';
+import { ensureAuth, getJudgeDashboard, listCases } from '@/lib/api';
+import { useUi } from '@/stores/ui';
 
-const metrics = [
-  { label: 'Navbatda', value: '12', note: 'ish', tone: 'blue' },
-  { label: 'Bugungi majlis', value: '4', note: 'jadvalda', tone: 'green' },
-  { label: 'AI draft', value: '2', note: 'tayyor', tone: 'blue' },
-  { label: 'Risk signal', value: '1', note: 'tekshiruv', tone: 'red' }
-];
+const ui = useUi();
+const dash = ref(null);
+const cases = ref([]);
+
+const load = async () => {
+  try {
+    await ensureAuth('judge');
+    const [d, c] = await Promise.all([getJudgeDashboard(), listCases()]);
+    dash.value = d;
+    cases.value = Array.isArray(c) ? c : [];
+  } catch (e) {
+    ui.pushToast({ type: 'error', title: 'Yuklab bo\'lmadi', text: e.message });
+  }
+};
+
+onMounted(load);
+
+const metrics = computed(() => [
+  { label: 'Jami ishlar', value: String(dash.value?.total_cases ?? cases.value.length), note: 'ish', tone: 'blue' },
+  { label: 'Aktiv', value: String(dash.value?.active_cases ?? 0), note: 'majlisda', tone: 'green' },
+  { label: 'AI draft', value: String(dash.value?.ai_drafts_ready ?? 0), note: 'tayyor', tone: 'blue' },
+  { label: 'Qaror chiqarilgan', value: String(dash.value?.decided ?? 0), note: 'yakunlangan', tone: 'red' }
+]);
+
+const statusLabel = (s) => String(s || '').replace(/_/g, ' ');
 
 const quickActions = [
   { label: 'Jonli majlis', icon: Mic, to: '/judge/hearing/live' },
@@ -31,21 +52,22 @@ const quickActions = [
   { label: 'Kalendar', icon: CalendarDays, to: '/judge/schedule' }
 ];
 
-const schedule = [
-  { time: '09:00', title: '#2026-001234 tayyorlov majlisi' },
-  { time: '11:00', title: '#2026-001209 dalillar ko‘rigi' },
-  { time: '14:30', title: '#2026-001178 asosiy majlis' },
-  { time: '16:00', title: 'Qarorlarni imzolash' }
-];
+// Bugungi jadval — biriktirilgan ishlardan tuziladi.
+const schedule = computed(() =>
+  (cases.value.slice(0, 4)).map((c, i) => ({
+    time: ['09:00', '11:00', '14:30', '16:00'][i] || '—',
+    title: `#${c.reference || c.id} — ${c.title}`
+  }))
+);
 </script>
 
 <template>
-  <RoleShell title="Sudya paneli" subtitle="Bugun: 12 ta ish, 4 ta majlis" :nav="judgeNav">
+  <RoleShell title="Sudya paneli" :subtitle="dash?.court || 'Sud ish stoli'" :nav="judgeNav">
     <section class="dashboard">
       <header class="summary-panel">
         <div>
           <p class="eyebrow">Bugungi ish stoli</p>
-          <h1>12 ta ish navbatda</h1>
+          <h1>{{ dash?.total_cases ?? cases.length }} ta ish</h1>
           <p>Majlislar, AI qoralamalar va aktiv ishlar nazoratda.</p>
         </div>
         <RouterLink to="/judge/hearing/live"
@@ -80,21 +102,24 @@ const schedule = [
                 ><BaseButton variant="ghost" size="sm">Ishlar</BaseButton></RouterLink
               >
             </div>
-            <div class="case-grid">
-              <BaseCard v-for="claim in claims" :key="claim.id" class="case-card" interactive>
+            <p v-if="!cases.length" class="muted">
+              Hozircha ish biriktirilmagan. Arizalar sudga qabul qilingach, ishlar shu yerda paydo bo'ladi.
+            </p>
+            <div v-else class="case-grid">
+              <BaseCard v-for="c in cases.slice(0, 6)" :key="c.id" class="case-card" interactive>
                 <FileText :size="22" :stroke-width="1.5" />
-                <h3>#{{ claim.id }}</h3>
-                <p>{{ claim.title }}</p>
-                <strong>{{ claim.score }}% LexPredictor</strong>
+                <h3>#{{ c.reference || c.id }}</h3>
+                <p>{{ c.title }}</p>
+                <strong>{{ statusLabel(c.status) }}</strong>
               </BaseCard>
             </div>
           </section>
 
-          <section class="panel">
+          <section v-if="cases.length" class="panel">
             <h2>Aktiv ishlar</h2>
             <DataTable
-              :columns="['Ish', 'Holat', 'Tomonlar', 'Sana']"
-              :rows="claims.map((claim) => [claim.id, claim.status, claim.title, claim.next])"
+              :columns="['Ish', 'Holat', 'Sarlavha', 'Turi']"
+              :rows="cases.map((c) => [c.reference || c.id, statusLabel(c.status), c.title, c.dispute_type])"
             />
           </section>
         </main>

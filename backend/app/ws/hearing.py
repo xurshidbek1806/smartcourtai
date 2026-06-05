@@ -52,6 +52,12 @@ async def hearing_ws(websocket: WebSocket, case_id: int):
         while True:
             message = await websocket.receive()
 
+            # Client closed the socket — stop the loop cleanly (don't call
+            # receive() again, which would raise RuntimeError).
+            if message.get("type") == "websocket.disconnect":
+                logger.info(f"Hearing #{case_id} client disconnected")
+                break
+
             # Text control frame (e.g. set speaker)
             if "text" in message and message["text"] is not None:
                 import json
@@ -69,12 +75,15 @@ async def hearing_ws(websocket: WebSocket, case_id: int):
 
             # Binary audio frame → transcribe
             if "bytes" in message and message["bytes"]:
+                audio_bytes = message["bytes"]
+                logger.info(f"[hearing #{case_id}] audio clip: {len(audio_bytes)} bytes")
                 clip_path = os.path.join(TMP_DIR, f"{uuid.uuid4().hex}.webm")
                 with open(clip_path, "wb") as f:
-                    f.write(message["bytes"])
+                    f.write(audio_bytes)
                 try:
                     result = await transcribe(clip_path)
                 except Exception as exc:  # noqa: BLE001
+                    logger.error(f"[hearing #{case_id}] transcribe FAILED: {exc}")
                     await websocket.send_json(
                         {"type": "error", "message": f"Transkripsiya xatosi: {exc}"}
                     )
@@ -86,7 +95,14 @@ async def hearing_ws(websocket: WebSocket, case_id: int):
                         pass
 
                 text = result.get("text", "").strip()
+                logger.info(
+                    f"[hearing #{case_id}] transcript: '{text}' "
+                    f"(lang={result.get('language')}, dur={result.get('duration')})"
+                )
                 if not text:
+                    await websocket.send_json(
+                        {"type": "status", "message": "(jim / nutq aniqlanmadi)"}
+                    )
                     continue
                 insight = await _quick_insight(text)
                 await websocket.send_json(
@@ -104,4 +120,11 @@ async def hearing_ws(websocket: WebSocket, case_id: int):
         logger.info(f"Hearing #{case_id} WebSocket disconnected")
     except Exception as exc:  # noqa: BLE001
         logger.error(f"Hearing WS error: {exc}")
-        await websocket.close()
+        # Only close if still connected — avoids the double-close ASGI error.
+        try:
+            from starlette.websockets import WebSocketState
+
+            if websocket.client_state == WebSocketState.CONNECTED:
+                await websocket.close()
+        except Exception:  # noqa: BLE001
+            pass

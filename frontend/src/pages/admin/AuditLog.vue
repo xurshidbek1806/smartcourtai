@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { Filter, FileDown } from 'lucide-vue-next';
 
 import RoleShell from '@/layouts/RoleShell.vue';
@@ -7,34 +7,53 @@ import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseModal from '@/components/ui/BaseModal.vue';
 import DataTable from '@/components/ui/DataTable.vue';
 import { adminNav } from '@/data/navigation';
-import { auditRows } from '@/data/mock';
+import { adminAuditLog, ensureAuth } from '@/lib/api';
+import { downloadDemoFile } from '@/services/demoActions';
 import { useUi } from '@/stores/ui';
 
 const ui = useUi();
 const open = ref(false);
-const auditTimeline = [
-  { time: '14:32', title: 'Login', text: 'Karimov A. SmartJudge moduliga kirdi.', tone: 'success' },
-  {
-    time: '14:30',
-    title: 'Export',
-    text: 'Admin Root audit loglarni JSON formatda eksport qildi.',
-    tone: 'info'
-  },
-  {
-    time: '14:21',
-    title: 'Permission change',
-    text: 'External login attempt bloklandi.',
-    tone: 'danger'
+const records = ref([]);
+const loading = ref(true);
+
+const fmtTime = (iso) => {
+  if (!iso) return '—';
+  try {
+    return new Date(iso).toLocaleString('uz-UZ');
+  } catch {
+    return iso;
   }
-];
+};
+
+const load = async () => {
+  loading.value = true;
+  try {
+    await ensureAuth('admin');
+    records.value = await adminAuditLog(100);
+  } catch (e) {
+    ui.pushToast({ type: 'error', title: 'Yuklab bo\'lmadi', text: e.message });
+  } finally {
+    loading.value = false;
+  }
+};
+
+onMounted(load);
+
+const auditRows = computed(() =>
+  records.value.map((r) => [
+    fmtTime(r.created_at),
+    String(r.user_id ?? '—'),
+    r.action ?? '—',
+    r.entity_type ?? '—',
+    r.ip_address ?? '—',
+    r.status ?? 'OK'
+  ])
+);
 
 const exportAudit = (format) => {
   open.value = false;
-  ui.pushToast({
-    type: 'success',
-    title: 'Eksport tayyor',
-    text: `Audit log ${format} formatida tayyor.`
-  });
+  downloadDemoFile(`audit-log.${format.toLowerCase()}`, records.value, 'application/json');
+  ui.pushToast({ type: 'success', title: 'Eksport tayyor', text: `Audit log ${format} yuklab olindi.` });
 };
 </script>
 
@@ -62,21 +81,15 @@ const exportAudit = (format) => {
           <BaseButton :icon="FileDown" @click="open = true">Eksport</BaseButton>
         </div>
       </div>
+      <p v-if="loading" class="muted">Yuklanmoqda...</p>
+      <p v-else-if="!auditRows.length" class="muted">
+        Audit yozuvlari hali yo'q. Tizimda amallar bajarilgach, ular shu yerda paydo bo'ladi.
+      </p>
       <DataTable
-        :columns="['Vaqt', 'Foydalanuvchi', 'Rol', 'Harakat', 'Manba IP', 'Holati']"
+        v-else
+        :columns="['Vaqt', 'Foydalanuvchi', 'Harakat', 'Obyekt', 'Manba IP', 'Holati']"
         :rows="auditRows"
       />
-      <section class="audit-timeline">
-        <h2>Audit timeline</h2>
-        <article v-for="item in auditTimeline" :key="item.time" :class="`tone-${item.tone}`">
-          <time>{{ item.time }}</time>
-          <span />
-          <div>
-            <h3>{{ item.title }}</h3>
-            <p>{{ item.text }}</p>
-          </div>
-        </article>
-      </section>
     </section>
     <BaseModal :open="open" title="Eksport sozlamalari" @close="open = false">
       <p class="muted">CSV, JSON yoki PDF formatida audit loglarni eksport qilish mumkin.</p>

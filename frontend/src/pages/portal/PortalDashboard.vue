@@ -1,4 +1,5 @@
 <script setup>
+import { computed, onMounted, ref } from 'vue';
 import {
   CalendarDays,
   CreditCard,
@@ -16,26 +17,49 @@ import BaseCard from '@/components/ui/BaseCard.vue';
 import BaseBadge from '@/components/ui/BaseBadge.vue';
 import DataTable from '@/components/ui/DataTable.vue';
 import { portalNav } from '@/data/navigation';
-import { claims } from '@/data/mock';
+import { ensureAuth, getCitizenDashboard, listClaims } from '@/lib/api';
+import { downloadDemoFile } from '@/services/demoActions';
+import { useUi } from '@/stores/ui';
 
-const metrics = [
-  { label: 'Aktiv arizalar', value: '3', note: 'jarayonda', tone: 'blue' },
-  { label: 'Keyingi majlis', value: '22.02', note: '10:00', tone: 'green' },
-  { label: 'Davlat boji', value: 'OK', note: 'tasdiqlandi', tone: 'green' },
-  { label: 'AI tavsiya', value: '67%', note: 'mediatsiya', tone: 'red' }
-];
+const ui = useUi();
+const dash = ref(null);
+const claims = ref([]);
+const userName = ref('Fuqaro');
+
+const load = async () => {
+  try {
+    const me = await ensureAuth('citizen');
+    if (me?.full_name) userName.value = me.full_name;
+    const [d, c] = await Promise.all([getCitizenDashboard(), listClaims()]);
+    dash.value = d;
+    if (d?.greeting_name) userName.value = d.greeting_name;
+    claims.value = c;
+  } catch (e) {
+    ui.pushToast({ type: 'error', title: 'Yuklab bo\'lmadi', text: e.message });
+  }
+};
+
+onMounted(load);
+
+const metrics = computed(() => [
+  { label: 'Jami arizalar', value: String(dash.value?.total_claims ?? 0), note: 'umumiy', tone: 'blue' },
+  { label: 'Aktiv arizalar', value: String(dash.value?.active_claims ?? 0), note: 'jarayonda', tone: 'green' },
+  { label: 'Qoralamalar', value: String(dash.value?.drafts ?? 0), note: 'tugallanmagan', tone: 'red' },
+  { label: 'AI tavsiya', value: 'RAG', note: 'mediatsiya', tone: 'blue' }
+]);
+
+const statusLabel = (s) => String(s || '').replace(/_/g, ' ');
+
+const exportClaims = () => {
+  downloadDemoFile('arizalarim.json', claims.value);
+  ui.pushToast({ type: 'success', title: 'Eksport', text: 'Arizalar JSON yuklab olindi.' });
+};
 
 const nextEvents = [
-  { icon: CreditCard, title: 'Davlat boji tasdiqlandi', meta: 'Bugun' },
-  { icon: FileText, title: 'Qo‘shimcha dalil kutilmoqda', meta: 'Ertaga' },
-  { icon: CalendarDays, title: 'Sud majlisi', meta: '22.02.2026' }
+  { icon: CreditCard, title: 'Davlat boji holati', meta: 'Portal' },
+  { icon: FileText, title: 'Hujjatlarni yuklash', meta: 'Ariza' },
+  { icon: CalendarDays, title: 'Sud majlisi sanasi', meta: 'Kutilmoqda' }
 ];
-
-const scoreTone = (score) => {
-  if (score >= 75) return 'green';
-  if (score >= 65) return 'blue';
-  return 'red';
-};
 </script>
 
 <template>
@@ -44,7 +68,7 @@ const scoreTone = (score) => {
       <header class="summary-panel">
         <div>
           <p class="eyebrow">Bugungi holat</p>
-          <h1>Dilshod Akramov</h1>
+          <h1>{{ userName }}</h1>
           <p>Arizalar, to‘lov va majlis sanalari nazoratda.</p>
         </div>
         <div class="summary-actions">
@@ -78,38 +102,39 @@ const scoreTone = (score) => {
                 <p class="eyebrow">Arizalar</p>
                 <h2>Aktiv ishlar</h2>
               </div>
-              <BaseButton variant="ghost" :icon="Send" size="sm">Eksport</BaseButton>
+              <BaseButton variant="ghost" :icon="Send" size="sm" @click="exportClaims">Eksport</BaseButton>
             </div>
-            <div class="claim-grid">
+            <p v-if="!claims.length" class="muted">
+              Hozircha arizangiz yo'q. "Yangi ariza" tugmasi orqali birinchi arizangizni yarating.
+            </p>
+            <div v-else class="claim-grid">
               <BaseCard
                 v-for="claim in claims"
                 :key="claim.id"
-                class="claim-card"
-                :class="`tone-${scoreTone(claim.score)}`"
+                class="claim-card tone-blue"
                 interactive
               >
                 <div class="card-top">
-                  <BaseBadge variant="outline">{{ claim.status }}</BaseBadge>
-                  <strong>{{ claim.score }}%</strong>
+                  <BaseBadge variant="outline">{{ statusLabel(claim.status) }}</BaseBadge>
+                  <strong>{{ claim.dispute_type }}</strong>
                 </div>
                 <h3>{{ claim.title }}</h3>
-                <p>#{{ claim.id }} • {{ claim.judge }}</p>
-                <div class="score"><span :style="{ width: `${claim.score}%` }" /></div>
+                <p>#{{ claim.reference || claim.id }}</p>
                 <RouterLink :to="`/portal/claims/${claim.id}`">Tafsilotlar</RouterLink>
               </BaseCard>
             </div>
           </section>
 
-          <section class="panel">
+          <section v-if="claims.length" class="panel">
             <div class="panel-header">
-              <h2>Kutilayotgan ishlar</h2>
+              <h2>Arizalar ro'yxati</h2>
               <RouterLink to="/portal/claims"
                 ><BaseButton variant="ghost" size="sm">Hammasi</BaseButton></RouterLink
               >
             </div>
             <DataTable
-              :columns="['Ariza', 'Holat', 'Sudya', 'Keyingi sana']"
-              :rows="claims.map((claim) => [claim.id, claim.status, claim.judge, claim.next])"
+              :columns="['Reference', 'Sarlavha', 'Turi', 'Holat']"
+              :rows="claims.map((claim) => [claim.reference || claim.id, claim.title, claim.dispute_type, statusLabel(claim.status)])"
             />
           </section>
         </main>

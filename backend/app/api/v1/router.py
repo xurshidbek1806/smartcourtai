@@ -7,9 +7,11 @@ from app.api.v1 import (
     auth,
     cases,
     claims,
+    corpus,
     dashboard,
     documents,
     justiscribe,
+    laws,
     mvp,
     notifications,
     system,
@@ -18,6 +20,8 @@ from app.api.v1 import (
 api_router = APIRouter()
 api_router.include_router(system.router)
 api_router.include_router(mvp.router)  # public, auth-free MVP endpoints
+api_router.include_router(laws.router)  # legal corpus + mock PDFs (public)
+api_router.include_router(laws.precedents_router)
 api_router.include_router(auth.router)
 api_router.include_router(dashboard.router)
 api_router.include_router(claims.router)
@@ -27,3 +31,4 @@ api_router.include_router(notifications.router)
 api_router.include_router(ai.router)
 api_router.include_router(justiscribe.router)
 api_router.include_router(admin.router)
+api_router.include_router(corpus.router)
