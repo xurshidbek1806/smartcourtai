@@ -193,6 +193,13 @@ onBeforeUnmount(() => {
 
 .bubble p {
   margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.bubble > div {
+  min-width: 0;
+  flex: 1;
 }
 
 .ai {

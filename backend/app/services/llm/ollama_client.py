@@ -46,6 +46,7 @@ class OllamaClient:
         temperature: Optional[float] = None,
         model: Optional[str] = None,
         format_json: bool = False,
+        num_predict: Optional[int] = None,
     ) -> str:
         """Single-shot completion (non-streaming)."""
         messages = []
@@ -53,15 +54,19 @@ class OllamaClient:
             messages.append({"role": "system", "content": system})
         messages.append({"role": "user", "content": prompt})
 
+        options = {
+            "temperature": temperature
+            if temperature is not None
+            else settings.LLM_TEMPERATURE
+        }
+        if num_predict is not None:
+            options["num_predict"] = num_predict
+
         payload = {
             "model": model or self.model,
             "messages": messages,
             "stream": False,
-            "options": {
-                "temperature": temperature
-                if temperature is not None
-                else settings.LLM_TEMPERATURE
-            },
+            "options": options,
         }
         if format_json:
             payload["format"] = "json"
@@ -79,6 +84,7 @@ class OllamaClient:
         system: Optional[str] = None,
         temperature: Optional[float] = None,
         model: Optional[str] = None,
+        num_predict: Optional[int] = None,
     ) -> AsyncGenerator[str, None]:
         """Token-by-token streaming (SmartJudge live generation)."""
         messages = []
@@ -86,15 +92,19 @@ class OllamaClient:
             messages.append({"role": "system", "content": system})
         messages.append({"role": "user", "content": prompt})
 
+        options = {
+            "temperature": temperature
+            if temperature is not None
+            else settings.LLM_TEMPERATURE
+        }
+        if num_predict is not None:
+            options["num_predict"] = num_predict
+
         payload = {
             "model": model or self.model,
             "messages": messages,
             "stream": True,
-            "options": {
-                "temperature": temperature
-                if temperature is not None
-                else settings.LLM_TEMPERATURE
-            },
+            "options": options,
         }
 
         timeout = httpx.Timeout(connect=10.0, read=900.0, write=30.0, pool=10.0)

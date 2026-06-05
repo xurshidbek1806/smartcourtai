@@ -251,7 +251,12 @@ async def assistant(payload: ChatMessage, user: CurrentUser):
     prompt = payload.message
     if context:
         prompt = f"## TEGISHLI QONUNLAR\n{context}\n\n## SAVOL\n{payload.message}"
-    answer = await llm.chat(prompt, system=LEGAL_ASSISTANT_SYSTEM, temperature=0.4)
+    answer = await llm.chat(
+        prompt,
+        system=LEGAL_ASSISTANT_SYSTEM,
+        temperature=0.3,
+        num_predict=320,
+    )
     return {"answer": answer, "used_context": bool(context)}
 
 
@@ -266,7 +271,12 @@ async def assistant_stream(payload: ChatMessage, user: CurrentUser):
         prompt = f"## TEGISHLI QONUNLAR\n{context}\n\n## SAVOL\n{payload.message}"
 
     async def gen():
-        async for token in llm.stream_chat(prompt, system=LEGAL_ASSISTANT_SYSTEM, temperature=0.4):
+        async for token in llm.stream_chat(
+            prompt,
+            system=LEGAL_ASSISTANT_SYSTEM,
+            temperature=0.3,
+            num_predict=320,
+        ):
             yield f"data: {json.dumps({'content': token}, ensure_ascii=False)}\n\n"
         yield f"data: {json.dumps({'type': 'done'})}\n\n"
 
