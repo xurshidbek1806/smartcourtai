@@ -9,7 +9,6 @@ import {
   Home,
   Landmark,
   Loader2,
-  Plus,
   Scale,
   Sparkles,
   Trash2,
@@ -42,6 +41,7 @@ const ui = useUi();
 const router = useRouter();
 const step = ref(1);
 const submitting = ref(false);
+const previewScale = ref('fit');
 
 const demoClaimDetails = {
   title: 'pul mablag‘ini undirish to‘g‘risida',
@@ -96,6 +96,14 @@ const disputeTypes = [
   { title: 'Ma’muriy shikoyat', icon: FileText, text: 'Davlat organi qarori yoki harakati.' }
 ];
 
+const courtOptions = [
+  'Fuqarolik ishlari bo‘yicha Toshkent shahar Yakkasaroy tumanlararo sudiga',
+  'Fuqarolik ishlari bo‘yicha Toshkent shahar Chilonzor tumanlararo sudiga',
+  'Fuqarolik ishlari bo‘yicha Toshkent shahar Mirzo Ulug‘bek tumanlararo sudiga',
+  'Toshkent tumanlararo iqtisodiy sudiga',
+  'Toshkent shahar ma’muriy sudiga'
+];
+
 const steps = ['Nizo turi', 'Tomonlar', 'Tafsilotlar', 'Dalillar', 'Yuborish'];
 const templateChoices = [
   'Fuqarolik da’vo arizasi',
@@ -117,6 +125,39 @@ const demoFlow = [
 const progress = computed(() => `${(step.value / 5) * 100}%`);
 const currentTemplate = computed(() => getClaimTemplateByDispute(form.selectedType));
 const officialDocumentDate = computed(() => formatOfficialDate());
+const extractedClaimInsights = computed(() => {
+  const description = String(form.description || '').toLowerCase();
+  const evidence = [];
+
+  if (description.includes('chek')) evidence.push('chek');
+  if (description.includes('yozishma')) evidence.push('yozishmalar');
+  if (description.includes('telefon')) evidence.push('telefon topshirilgani');
+  if (form.preTrial) evidence.push('sudgacha murojaat');
+
+  return [
+    { label: 'Aniqlangan talab', value: form.title || 'Talab hali kiritilmagan' },
+    { label: 'Aniqlangan summa', value: form.amount || 'Summa hali kiritilmagan' },
+    { label: 'Voqea sanasi', value: form.eventDate || 'Sana hali kiritilmagan' },
+    {
+      label: 'Aniqlangan dalillar',
+      value: evidence.length ? evidence.join(', ') : 'Dalillar matndan aniqlanmadi'
+    }
+  ];
+});
+const officialChecklist = computed(() => [
+  { label: 'Sud nomi', done: Boolean(form.courtName) },
+  { label: 'Da’vogar ma’lumotlari', done: Boolean(form.claimantName && form.claimantPinfl) },
+  { label: 'Javobgar ma’lumotlari', done: Boolean(form.respondentName && form.respondentAddress) },
+  { label: 'Talab va summa', done: Boolean(form.title && form.amount) },
+  { label: 'Holatlar bayoni', done: Boolean(form.description && form.description.length > 80) },
+  { label: 'Dalil yoki izoh', done: Boolean(uploadedFiles.value.length || form.description) },
+  { label: 'Sudgacha murojaat', done: Boolean(form.preTrial) },
+  { label: 'Avtomatik sana', done: Boolean(officialDocumentDate.value) }
+]);
+const checklistProgress = computed(() => {
+  const completed = officialChecklist.value.filter((item) => item.done).length;
+  return `${completed}/${officialChecklist.value.length}`;
+});
 const compactLegalReferences = computed(() =>
   legalReferences.map((reference) => ({
     ...reference,
@@ -149,35 +190,12 @@ const saveDraft = () => {
   });
 };
 
-const applyOneIdDemoProfile = () => {
-  form.claimantName = demoOneIdProfile.fullName;
-  form.claimantBirthDate = demoOneIdProfile.birthDate;
-  form.claimantPinfl = demoOneIdProfile.pinfl;
-  form.claimantPassport = demoOneIdProfile.passport;
-  form.claimantAddress = demoOneIdProfile.address;
-  form.claimantPhone = demoOneIdProfile.phone;
-  form.claimantEmail = demoOneIdProfile.email;
-  ui.pushToast({
-    type: 'success',
-    title: 'OneID profil to‘ldirildi',
-    text: `${demoOneIdProfile.fullName} ma’lumotlari arizaga qo‘shildi.`
-  });
-};
-
 const applyDemoClaimDetails = () => {
   Object.assign(form, demoClaimDetails);
   ui.pushToast({
     type: 'success',
     title: 'Demo tavsif to‘ldirildi',
     text: 'Ariza mavzusi, voqea bayoni, summa va sudgacha murojaat demo holatga qaytarildi.'
-  });
-};
-
-const addParty = () => {
-  ui.pushToast({
-    type: 'info',
-    title: 'Tomon',
-    text: "Bu demoda bitta javobgar qo'llab-quvvatlanadi."
   });
 };
 
@@ -459,94 +477,111 @@ const handleNext = () => {
 
           <template v-else-if="step === 2">
             <h2>2. OneID profil va tomonlar</h2>
-            <BaseCard variant="filled" class="oneid-card">
-              <div>
-                <p class="eyebrow">OneID orqali olingan fuqaro ma’lumotlari</p>
-                <h3>{{ demoOneIdProfile.fullName }}</h3>
-                <p>
-                  JShShIR: {{ demoOneIdProfile.pinfl }} • Pasport: {{ demoOneIdProfile.passport }} •
-                  {{ demoOneIdProfile.verification }}
-                </p>
+            <BaseCard variant="filled" class="oneid-card simplified">
+              <div class="oneid-summary">
+                <div>
+                  <p class="eyebrow">Arizachi OneID orqali tasdiqlandi</p>
+                  <h3>{{ demoOneIdProfile.fullName }}</h3>
+                  <p>
+                    Bu ma’lumotlar davlat identifikatsiyasidan keladi va ariza yaratishda qo‘lda
+                    o‘zgartirilmaydi.
+                  </p>
+                </div>
+                <span class="verified-pill">Tasdiqlangan</span>
               </div>
-              <BaseButton variant="secondary" size="sm" @click="applyOneIdDemoProfile">
-                Demo AKK ma’lumotlarini to‘ldirish
-              </BaseButton>
+              <div class="readonly-profile-grid">
+                <div>
+                  <span>JShShIR</span>
+                  <strong>{{ form.claimantPinfl }}</strong>
+                </div>
+                <div>
+                  <span>Pasport</span>
+                  <strong>{{ form.claimantPassport }}</strong>
+                </div>
+                <div>
+                  <span>Tug‘ilgan sana</span>
+                  <strong>{{ form.claimantBirthDate }}</strong>
+                </div>
+                <div>
+                  <span>Yashash manzili</span>
+                  <strong>{{ form.claimantAddress }}</strong>
+                </div>
+              </div>
+              <details class="contact-details">
+                <summary>Aloqa uchun qo‘shimcha ma’lumotlar</summary>
+                <div class="grid grid-2 form-grid compact">
+                  <BaseInput
+                    v-model="form.claimantPhone"
+                    label="Qo‘shimcha telefon"
+                    placeholder="+998 90 000 00 00"
+                  />
+                  <BaseInput
+                    v-model="form.claimantEmail"
+                    label="Qo‘shimcha email"
+                    placeholder="name@example.uz"
+                  />
+                </div>
+              </details>
             </BaseCard>
-            <div class="toolbar">
-              <BaseButton
-                :variant="form.partyType === 'Jismoniy shaxs' ? 'primary' : 'secondary'"
-                @click="form.partyType = 'Jismoniy shaxs'"
-              >
-                Jismoniy shaxs
-              </BaseButton>
-              <BaseButton
-                :variant="form.partyType === 'Yuridik shaxs' ? 'primary' : 'secondary'"
-                @click="form.partyType = 'Yuridik shaxs'"
-              >
-                Yuridik shaxs
-              </BaseButton>
-            </div>
-            <div class="grid grid-2 form-grid">
-              <BaseInput
-                v-model="form.courtName"
-                label="Sud nomi"
-                placeholder="Fuqarolik ishlari bo‘yicha ... sudiga"
-              />
-              <BaseInput
-                v-model="form.claimantName"
-                label="Da’vogar F.I.Sh"
-                placeholder="Fayzullayev Jaxongir Azam o‘g‘li"
-              />
-              <BaseInput
-                v-model="form.claimantBirthDate"
-                label="Tug‘ilgan sana"
-                placeholder="14.05.1995"
-              />
-              <BaseInput
-                v-model="form.claimantPinfl"
-                label="JShShIR"
-                placeholder="12345678901234"
-              />
-              <BaseInput v-model="form.claimantPassport" label="Pasport" placeholder="AD 1234567" />
-              <BaseInput
-                v-model="form.claimantAddress"
-                label="Da’vogar manzili"
-                placeholder="Toshkent, Yunusobod"
-              />
-              <BaseInput
-                v-model="form.claimantPhone"
-                label="Da’vogar telefon"
-                placeholder="+998 90 000 00 00"
-              />
-              <BaseInput
-                v-model="form.claimantEmail"
-                label="Da’vogar email"
-                placeholder="name@example.uz"
-              />
-              <BaseInput
-                v-model="form.respondentName"
-                label="Javobgar F.I.Sh / tashkilot"
-                placeholder="Alfa MChJ"
-              />
-              <BaseInput
-                v-model="form.respondentPinfl"
-                label="Javobgar PINFL / INN"
-                placeholder="987654321"
-              />
-              <BaseInput
-                v-model="form.respondentAddress"
-                label="Javobgar manzili"
-                placeholder="Toshkent, Chilonzor"
-              />
-              <BaseInput
-                v-model="form.respondentPhone"
-                label="Javobgar telefon / email"
-                placeholder="+998 71 000 00 00"
-              />
-            </div>
-            <BaseButton variant="secondary" :icon="Plus" @click="addParty"
-              >Yana tomon qo‘shish</BaseButton
-            >
+
+            <BaseCard variant="outlined" class="court-card">
+              <p class="eyebrow">Sud</p>
+              <label class="select-field">
+                <span>Sudni ro‘yxatdan tanlang</span>
+                <select v-model="form.courtName">
+                  <option v-for="court in courtOptions" :key="court" :value="court">
+                    {{ court }}
+                  </option>
+                </select>
+              </label>
+            </BaseCard>
+
+            <BaseCard variant="outlined" class="respondent-card">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">Javobgar</p>
+                  <h3>Kimga nisbatan da’vo kiritilmoqda?</h3>
+                </div>
+                <div class="segmented-control" aria-label="Javobgar turi">
+                  <button
+                    type="button"
+                    :class="{ active: form.partyType === 'Jismoniy shaxs' }"
+                    @click="form.partyType = 'Jismoniy shaxs'"
+                  >
+                    Jismoniy shaxs
+                  </button>
+                  <button
+                    type="button"
+                    :class="{ active: form.partyType === 'Yuridik shaxs' }"
+                    @click="form.partyType = 'Yuridik shaxs'"
+                  >
+                    Yuridik shaxs
+                  </button>
+                </div>
+              </div>
+              <div class="grid grid-2 form-grid compact">
+                <BaseInput
+                  v-model="form.respondentName"
+                  label="F.I.Sh / tashkilot"
+                  placeholder="Alfa MChJ"
+                />
+                <BaseInput
+                  v-model="form.respondentPinfl"
+                  label="PINFL / INN"
+                  placeholder="987654321"
+                />
+                <BaseInput
+                  v-model="form.respondentAddress"
+                  label="Manzil"
+                  placeholder="Toshkent, Chilonzor"
+                />
+                <BaseInput
+                  v-model="form.respondentPhone"
+                  label="Telefon / email"
+                  placeholder="+998 71 000 00 00"
+                />
+              </div>
+            </BaseCard>
           </template>
 
           <template v-else-if="step === 3">
@@ -602,6 +637,22 @@ const handleNext = () => {
                     : 'AI bilan tekshirish (ClaimValidator)'
                 }}
               </BaseButton>
+
+              <BaseCard variant="filled" class="insight-card">
+                <div class="insight-heading">
+                  <div>
+                    <p class="eyebrow">AI ajratgan ma’lumotlar</p>
+                    <h3>Ariza matnidan tushunilgan asosiy nuqtalar</h3>
+                  </div>
+                  <span>Frontend demo</span>
+                </div>
+                <div class="insight-grid">
+                  <div v-for="item in extractedClaimInsights" :key="item.label">
+                    <span>{{ item.label }}</span>
+                    <strong>{{ item.value }}</strong>
+                  </div>
+                </div>
+              </BaseCard>
 
               <BaseCard v-if="validation.data" variant="filled" class="ai-result">
                 <p class="eyebrow">AI: ClaimValidator natijasi</p>
@@ -681,6 +732,20 @@ const handleNext = () => {
             <p v-if="!uploadedFiles.length" class="muted" style="margin-top: 10px">
               Dalil ixtiyoriy — fayl yuklamasdan ham davom etishingiz mumkin.
             </p>
+            <BaseCard v-if="!uploadedFiles.length" variant="filled" class="smart-empty">
+              <p class="eyebrow">Demo uchun avtomatik dalillar</p>
+              <h3>Fayl bo‘lmasa ham, tizim matndan dalil izlarini ko‘rsatadi</h3>
+              <div class="template-list">
+                <span>Chek</span>
+                <span>Yozishmalar</span>
+                <span>Telefon topshirilgani</span>
+                <span>Sudgacha murojaat</span>
+              </div>
+              <p>
+                Rasmiy previewda bu bandlar bo‘sh chiziq o‘rniga mazmun sifatida chiqadi. Real fayl
+                yuklansa, shu ro‘yxat fayl nomlari bilan almashadi.
+              </p>
+            </BaseCard>
             <div class="file-list">
               <BaseCard
                 v-for="file in uploadedFiles"
@@ -715,8 +780,8 @@ const handleNext = () => {
                 Ariza sanasi avtomatik: <strong>{{ officialDocumentDate }}</strong>
               </div>
               <div class="trust-banner">
-                Bu hujjat avtomatik tayyorlangan. Yakuniy tasdiq mas’ul shaxs tomonidan amalga
-                oshiriladi.
+                <strong>Yuridik eslatma:</strong> Bu hujjat avtomatik tayyorlangan. Yakuniy tasdiq
+                mas’ul shaxs tomonidan amalga oshiriladi.
               </div>
               <div class="template-list">
                 <span v-for="field in currentTemplate.requiredFields" :key="field">{{
@@ -732,15 +797,68 @@ const handleNext = () => {
                 </BaseButton>
               </div>
             </BaseCard>
+            <BaseCard variant="filled" class="checklist-card">
+              <div class="checklist-heading">
+                <div>
+                  <p class="eyebrow">Rasmiylik checklist</p>
+                  <h3>{{ checklistProgress }} talab tayyor</h3>
+                </div>
+                <span>Sudga yuborishdan oldingi frontend tekshiruv</span>
+              </div>
+              <div class="checklist-grid">
+                <button
+                  v-for="item in officialChecklist"
+                  :key="item.label"
+                  type="button"
+                  :class="{ done: item.done }"
+                >
+                  <span>{{ item.done ? '✓' : '!' }}</span>
+                  {{ item.label }}
+                </button>
+              </div>
+            </BaseCard>
             <section class="document-stage">
               <div class="preview-header">
                 <div>
                   <p class="eyebrow">Yakuniy ariza preview</p>
                   <h3>Qog‘ozda chiqadigan rasmiy ko‘rinish</h3>
                 </div>
-                <span class="template-pill">{{ form.selectedType }}</span>
+                <div class="preview-tools">
+                  <span class="template-pill">
+                    Shablon: {{ currentTemplate.name }} • {{ currentTemplate.paper.size }} •
+                    {{ currentTemplate.paper.font }}
+                  </span>
+                  <div class="zoom-control" aria-label="Preview zoom">
+                    <button
+                      type="button"
+                      :class="{ active: previewScale === 'fit' }"
+                      @click="previewScale = 'fit'"
+                    >
+                      Fit
+                    </button>
+                    <button
+                      type="button"
+                      :class="{ active: previewScale === '75' }"
+                      @click="previewScale = '75'"
+                    >
+                      75%
+                    </button>
+                    <button
+                      type="button"
+                      :class="{ active: previewScale === '100' }"
+                      @click="previewScale = '100'"
+                    >
+                      100%
+                    </button>
+                  </div>
+                </div>
               </div>
-              <article class="official-paper">
+              <div class="preview-shortcuts">
+                <button type="button" @click="step = 2">Da’vogar/Javobgarni tahrirlash</button>
+                <button type="button" @click="step = 3">Talab va holatlarni tahrirlash</button>
+                <button type="button" @click="step = 4">Dalillarni tahrirlash</button>
+              </div>
+              <article class="official-paper" :class="`scale-${previewScale}`">
                 <div class="paper-body">
                   <template
                     v-for="(block, index) in claimPreviewBlocks"
@@ -781,6 +899,20 @@ const handleNext = () => {
                 <BaseButton @click="handleNext">Sudga yuborish</BaseButton>
               </div>
             </BaseCard>
+            <div class="sticky-export-bar">
+              <div>
+                <strong>Rasmiy ariza tayyor</strong>
+                <span>{{ checklistProgress }} band checklistdan o‘tdi</span>
+              </div>
+              <div class="toolbar">
+                <BaseButton variant="secondary" :icon="FileText" @click="exportClaimJson">
+                  Texnik metadata
+                </BaseButton>
+                <BaseButton :icon="FileDown" @click="exportClaimDoc">
+                  Rasmiy hujjatni yuklash
+                </BaseButton>
+              </div>
+            </div>
           </template>
 
           <footer class="wizard-actions">
@@ -961,6 +1093,134 @@ h2 {
   line-height: 1.5;
 }
 
+.oneid-card.simplified {
+  display: grid;
+  gap: 16px;
+}
+
+.oneid-summary,
+.section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.verified-pill {
+  border: 1px solid color-mix(in srgb, var(--stat-green) 38%, var(--border-subtle));
+  border-radius: var(--radius-full);
+  background: var(--stat-green-soft);
+  padding: 7px 10px;
+  color: var(--gray-900);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.readonly-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.readonly-profile-grid div {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  padding: 11px 12px;
+}
+
+.readonly-profile-grid span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--gray-500);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.readonly-profile-grid strong {
+  color: var(--gray-900);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.contact-details {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 12px;
+}
+
+.contact-details summary {
+  color: var(--gray-800);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.form-grid.compact {
+  margin: 14px 0 0;
+}
+
+.court-card,
+.respondent-card {
+  margin: 16px 0;
+}
+
+.respondent-card h3 {
+  margin: 4px 0 0;
+  color: var(--gray-900);
+  font-size: 17px;
+}
+
+.select-field {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+  color: var(--gray-700);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.select-field select {
+  min-height: 44px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  color: var(--gray-900);
+  padding: 0 12px;
+  outline: 0;
+  font: inherit;
+  font-weight: 650;
+}
+
+.select-field select:focus {
+  border-color: var(--gray-900);
+}
+
+.segmented-control {
+  display: inline-flex;
+  overflow: hidden;
+  flex: 0 0 auto;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-full);
+  background: var(--color-white);
+  padding: 3px;
+}
+
+.segmented-control button {
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  padding: 8px 12px;
+  color: var(--gray-600);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.segmented-control button.active {
+  background: var(--gray-900);
+  color: var(--color-white);
+}
+
 .auto-date-card {
   display: flex;
   align-items: flex-start;
@@ -977,6 +1237,65 @@ h2 {
   margin: 0;
   color: var(--gray-500);
   line-height: 1.5;
+}
+
+.insight-card {
+  margin-top: 10px;
+}
+
+.insight-heading,
+.checklist-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.insight-heading h3,
+.checklist-heading h3 {
+  margin: 4px 0 0;
+  color: var(--gray-900);
+  font-size: 17px;
+}
+
+.insight-heading > span,
+.checklist-heading > span {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  background: var(--color-white);
+  padding: 7px 10px;
+  color: var(--gray-600);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.insight-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.insight-grid div {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  padding: 12px;
+}
+
+.insight-grid span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--gray-500);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.insight-grid strong {
+  color: var(--gray-900);
+  font-size: 14px;
+  line-height: 1.45;
 }
 
 .template-list {
@@ -1105,6 +1424,22 @@ textarea {
   outline: 0;
 }
 
+.smart-empty {
+  margin: 14px 0;
+}
+
+.smart-empty h3 {
+  margin: 5px 0 8px;
+  color: var(--gray-900);
+  font-size: 17px;
+}
+
+.smart-empty p {
+  margin: 12px 0 0;
+  color: var(--gray-500);
+  line-height: 1.55;
+}
+
 .file-list {
   display: grid;
   gap: 10px;
@@ -1178,6 +1513,52 @@ textarea {
   font-weight: 700;
 }
 
+.checklist-card {
+  margin: 18px 0;
+}
+
+.checklist-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.checklist-grid button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  padding: 10px 12px;
+  color: var(--gray-700);
+  font-size: 13px;
+  font-weight: 800;
+  text-align: left;
+}
+
+.checklist-grid button span {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--gray-100);
+  color: var(--gray-500);
+}
+
+.checklist-grid button.done {
+  border-color: color-mix(in srgb, var(--stat-green) 32%, var(--border-subtle));
+  background: var(--stat-green-soft);
+  color: var(--gray-900);
+}
+
+.checklist-grid button.done span {
+  background: var(--stat-green);
+  color: var(--color-white);
+}
+
 .document-stage {
   margin: 18px 0;
   border: 1px solid var(--border-subtle);
@@ -1212,6 +1593,47 @@ textarea {
   font-weight: 800;
 }
 
+.preview-tools {
+  display: flex;
+  align-items: flex-end;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.zoom-control,
+.preview-shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.zoom-control button,
+.preview-shortcuts button {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  background: var(--color-white);
+  padding: 7px 10px;
+  color: var(--gray-700);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.zoom-control button.active {
+  border-color: var(--gray-900);
+  background: var(--gray-900);
+  color: var(--color-white);
+}
+
+.preview-shortcuts {
+  margin-bottom: 14px;
+}
+
+.preview-shortcuts button:hover {
+  border-color: var(--stat-blue);
+  background: var(--stat-blue-soft);
+  color: var(--gray-900);
+}
+
 .official-paper {
   box-sizing: border-box;
   width: min(100%, 210mm);
@@ -1225,6 +1647,21 @@ textarea {
   font-family: 'Times New Roman', Times, serif;
   font-size: 14pt;
   line-height: 1.55;
+}
+
+.official-paper.scale-fit {
+  width: min(100%, 210mm);
+}
+
+.official-paper.scale-75 {
+  width: 157.5mm;
+  min-height: 520px;
+  font-size: 12pt;
+}
+
+.official-paper.scale-100 {
+  width: 210mm;
+  max-width: none;
 }
 
 .paper-body {
@@ -1280,6 +1717,38 @@ textarea {
 
 .paper-body :deep(.spacer) {
   height: 3mm;
+}
+
+.sticky-export-bar {
+  position: sticky;
+  z-index: 3;
+  bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 18px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--color-white) 92%, var(--gray-100));
+  box-shadow: var(--shadow-md);
+  padding: 12px 14px;
+  backdrop-filter: blur(14px);
+}
+
+.sticky-export-bar strong,
+.sticky-export-bar span {
+  display: block;
+}
+
+.sticky-export-bar strong {
+  color: var(--gray-900);
+}
+
+.sticky-export-bar span {
+  margin-top: 3px;
+  color: var(--gray-500);
+  font-size: 12px;
 }
 
 .ai-panel {
@@ -1388,6 +1857,37 @@ textarea {
   .validator-summary {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .checklist-grid,
+  .insight-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .insight-heading,
+  .checklist-heading,
+  .preview-header,
+  .section-heading,
+  .oneid-summary,
+  .sticky-export-bar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .readonly-profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .preview-tools {
+    align-items: flex-start;
+  }
+
+  .official-paper.scale-100 {
+    width: min(100%, 210mm);
+  }
+
+  .sticky-export-bar .toolbar {
+    width: 100%;
   }
 
   .auto-date-card,
