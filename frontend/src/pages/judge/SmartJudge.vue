@@ -45,6 +45,13 @@ let controller = null;
 let timer = null;
 
 const wordCount = computed(() => (draft.value.trim() ? draft.value.trim().split(/\s+/).length : 0));
+const compactLegalReferences = computed(() =>
+  legalReferences.map((reference) => ({
+    ...reference,
+    summary:
+      reference.title.length > 92 ? `${reference.title.slice(0, 92).trim()}...` : reference.title
+  }))
+);
 
 const startTimer = () => {
   const t0 = Date.now();
@@ -137,6 +144,10 @@ const buildDecisionPayload = () => ({
   laws: sources.laws,
   precedents: sources.precedents
 });
+
+const decisionPreviewText = computed(() =>
+  draft.value.trim() ? buildDecisionDocument(buildDecisionPayload()) : ''
+);
 
 const exportDecisionDoc = () => {
   if (!draft.value.trim()) {
@@ -241,18 +252,36 @@ onBeforeUnmount(() => {
           </span>
         </div>
 
-        <!-- Draft -->
-        <div v-if="draft || streaming" class="editor" :class="{ streaming }">
-          <pre class="draft-text" v-text="draft" />
-          <span v-if="streaming" class="cursor" />
-        </div>
-        <div v-else class="editor">
-          <p class="empty">
-            Yuqorida ish holatlarini to'ldiring va "Qoralama yaratish" tugmasini bosing. Llama
-            3.2:3b modeli RAG orqali tegishli qonun moddalarini topib, real vaqtda sud qarori
-            qoralamasini token-by-token generatsiya qiladi.
+        <!-- Official preview -->
+        <section v-if="draft || streaming" class="document-stage">
+          <div class="preview-header">
+            <div>
+              <p class="eyebrow">Rasmiy A4 preview</p>
+              <h2>Sudya ko‘radigan qaror shakli</h2>
+            </div>
+            <span class="template-pill">Sud qarori loyihasi</span>
+          </div>
+          <div class="trust-banner">
+            Bu hujjat avtomatik tayyorlangan. Yakuniy tasdiq mas’ul shaxs tomonidan amalga
+            oshiriladi.
+          </div>
+          <article class="official-paper" :class="{ streaming }">
+            <div class="paper-meta">
+              {{ decisionTemplate.name }} · {{ decisionTemplate.paper.size }} ·
+              {{ decisionTemplate.paper.font }}
+            </div>
+            <pre class="paper-text" v-text="decisionPreviewText || draft" />
+            <span v-if="streaming" class="cursor" />
+          </article>
+        </section>
+        <section v-else class="document-stage empty-state">
+          <div class="empty-illustration">A4</div>
+          <h2>Sud qarori loyihasini yaratish uchun ish ma’lumotlarini kiriting.</h2>
+          <p>
+            SmartJudge ish holatlari, tomonlar va RAG manbalari asosida qaror qoralamasini rasmiy
+            qog‘oz ko‘rinishida chiqaradi.
           </p>
-        </div>
+        </section>
 
         <div class="toolbar">
           <BaseButton
@@ -264,7 +293,7 @@ onBeforeUnmount(() => {
             Qayta yaratish
           </BaseButton>
           <BaseButton :icon="FileDown" :disabled="streaming || !draft" @click="exportDecisionDoc">
-            Qaror .doc
+            Rasmiy hujjatni yuklash
           </BaseButton>
           <BaseButton
             variant="secondary"
@@ -272,7 +301,7 @@ onBeforeUnmount(() => {
             :disabled="streaming || !draft"
             @click="exportDecisionJson"
           >
-            JSON paketi
+            Texnik metadata
           </BaseButton>
         </div>
       </main>
@@ -281,11 +310,18 @@ onBeforeUnmount(() => {
         <BaseCard>
           <h2>Qaror shabloni</h2>
           <p class="muted">
-            {{ decisionTemplate.name }}: kirish, bayon, asoslantiruvchi va xulosa qismlari. Yakuniy
-            PDF/PDF-A va ERI backendda shakllantiriladi.
+            Hozir tanlangan shablon: <strong>{{ decisionTemplate.name }}</strong
+            >. Yakuniy PDF/PDF-A va ERI keyingi bosqichda backendda shakllantiriladi.
           </p>
           <div class="template-list">
             <span v-for="section in decisionTemplate.sections" :key="section">{{ section }}</span>
+          </div>
+        </BaseCard>
+        <BaseCard>
+          <h2>Ishonch statusi</h2>
+          <div class="trust-banner compact">
+            Bu hujjat avtomatik tayyorlangan. Yakuniy tasdiq mas’ul shaxs tomonidan amalga
+            oshiriladi.
           </div>
         </BaseCard>
         <BaseCard>
@@ -313,9 +349,16 @@ onBeforeUnmount(() => {
         </BaseCard>
         <BaseCard>
           <h2>Huquqiy asos</h2>
-          <div v-for="reference in legalReferences" :key="reference.code" class="source-item">
+          <div
+            v-for="reference in compactLegalReferences"
+            :key="reference.code"
+            class="source-item"
+          >
             <strong>{{ reference.code }}</strong>
-            <p>{{ reference.title }}</p>
+            <p>{{ reference.summary }}</p>
+            <a class="source-link" :href="reference.url" target="_blank" rel="noreferrer">
+              To‘liq ko‘rish
+            </a>
           </div>
         </BaseCard>
         <RouterLink to="/oversight/auto-exec">
@@ -391,6 +434,128 @@ h1 {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+
+.document-stage {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--gray-100) 80%, transparent), transparent),
+    var(--gray-100);
+  padding: 18px;
+}
+
+.preview-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.preview-header h2 {
+  margin: 2px 0 0;
+  font-size: 20px;
+}
+
+.template-pill {
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-full);
+  background: var(--color-white);
+  padding: 8px 12px;
+  color: var(--gray-800);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.trust-banner {
+  margin-bottom: 14px;
+  border: 1px solid color-mix(in srgb, var(--stat-blue) 24%, var(--border-subtle));
+  border-radius: var(--radius-md);
+  background: var(--stat-blue-soft);
+  padding: 12px 14px;
+  color: var(--gray-800);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.trust-banner.compact {
+  margin: 0;
+}
+
+.official-paper {
+  position: relative;
+  box-sizing: border-box;
+  width: min(100%, 210mm);
+  min-height: 560px;
+  margin: 0 auto;
+  border: 1px solid color-mix(in srgb, var(--gray-300) 70%, var(--border-subtle));
+  background: var(--color-white);
+  box-shadow: 0 22px 55px rgb(15 23 42 / 12%);
+  padding: 24mm 15mm 22mm 30mm;
+  color: #111827;
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 14pt;
+  line-height: 1.55;
+}
+
+.official-paper.streaming {
+  border-color: var(--gray-900);
+}
+
+.paper-meta {
+  margin-bottom: 10mm;
+  border-bottom: 1px solid #d1d5db;
+  padding-bottom: 4mm;
+  color: #6b7280;
+  font-family: Arial, sans-serif;
+  font-size: 9pt;
+}
+
+.paper-text {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.empty-state {
+  display: grid;
+  min-height: 360px;
+  place-items: center;
+  align-content: center;
+  text-align: center;
+}
+
+.empty-state h2 {
+  max-width: 560px;
+  margin: 14px auto 8px;
+  font-size: 22px;
+}
+
+.empty-state p {
+  max-width: 620px;
+  margin: 0;
+  color: var(--gray-500);
+  line-height: 1.6;
+}
+
+.empty-illustration {
+  display: grid;
+  width: 96px;
+  height: 124px;
+  place-items: center;
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  background: var(--color-white);
+  box-shadow: var(--shadow-sm);
+  color: var(--gray-400);
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 22px;
+  font-weight: 800;
 }
 
 .editor {
@@ -499,6 +664,15 @@ h1 {
   color: var(--gray-500);
   font-size: 12px;
   line-height: 1.5;
+}
+
+.source-link {
+  display: inline-flex;
+  margin-top: 7px;
+  color: var(--stat-blue);
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
 }
 
 .spin {

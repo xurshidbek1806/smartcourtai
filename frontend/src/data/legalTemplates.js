@@ -42,6 +42,12 @@ export const legalReferences = [
     title:
       'Iqtisodiy da’vo arizasi va unga ilova qilinadigan hujjatlar bo‘yicha talablar ko‘rsatiladi.',
     url: 'https://lex.uz/uz/docs/-3523891'
+  },
+  {
+    code: 'MSIYutK 128-131-moddalar',
+    title:
+      'Ma’muriy sudga ariza yoki shikoyat berish, unga qo‘yiladigan talablar va qabul qilish tartibi ko‘rsatiladi.',
+    url: 'https://lex.uz/Pages/GetPdf.aspx?file=LexUz_6799209.pdf'
   }
 ];
 
@@ -93,6 +99,30 @@ export const claimTemplates = {
       'Ilovalar ro‘yxati',
       'Imzo yoki ERI'
     ]
+  },
+  administrative_claim: {
+    id: 'administrative_claim',
+    name: 'Ma’muriy shikoyat arizasi',
+    format: 'DOC/PDF + JSON metadata',
+    paper: {
+      size: 'A4',
+      margins: '20mm 15mm 20mm 30mm',
+      font: 'Times New Roman',
+      fontSize: '14pt'
+    },
+    basis: ['MSIYutK 128-modda', 'MSIYutK 129-modda', 'MSIYutK 130-modda', 'MSIYutK 131-modda'],
+    appliesTo: ['Ma’muriy shikoyat'],
+    requiredFields: [
+      'Ma’muriy sud nomi',
+      'Arizachi ma’lumotlari',
+      'Javobgar ma’muriy organ yoki mansabdor shaxs',
+      'Nizolashilayotgan qaror yoki harakat',
+      'Huquq buzilishi mazmuni',
+      'Talablar',
+      'Dalillar',
+      'Ilovalar ro‘yxati',
+      'Imzo yoki ERI'
+    ]
   }
 };
 
@@ -113,6 +143,8 @@ export const decisionTemplate = {
 export const getClaimTemplateByDispute = (disputeType = '') => {
   const normalized = disputeType.toLowerCase();
   if (normalized.includes('iqtisod')) return claimTemplates.economic_claim;
+  if (normalized.includes('ma’mur') || normalized.includes("ma'mur"))
+    return claimTemplates.administrative_claim;
   return claimTemplates.civil_claim;
 };
 
@@ -144,10 +176,13 @@ const listFiles = (files = []) => {
 export const buildClaimDocument = ({ form, uploadedFiles = [], validation = null }) => {
   const template = getClaimTemplateByDispute(form.selectedType);
   const isEconomic = template.id === 'economic_claim';
+  const isAdministrative = template.id === 'administrative_claim';
   const parties = getClaimParties(form);
   const courtName = isEconomic
     ? '________________ iqtisodiy sudiga'
-    : '________________ fuqarolik ishlari bo‘yicha sudiga';
+    : isAdministrative
+      ? '________________ ma’muriy sudiga'
+      : '________________ fuqarolik ishlari bo‘yicha sudiga';
   const generatedAt = GENERATED_AT_FORMATTER.format(new Date());
 
   return `${courtName}
@@ -181,7 +216,13 @@ ${listFiles(uploadedFiles)}
 ${template.basis.join(', ')}
 
 6. Sudgacha hal qilish tartibi
-${isEconomic ? 'Talabnoma yuborilganligi va natijasi ko‘rsatiladi.' : 'Qonun yoki shartnomada nazarda tutilgan bo‘lsa, sudgacha tartib ko‘rsatiladi.'}
+${
+  isEconomic
+    ? 'Talabnoma yuborilganligi va natijasi ko‘rsatiladi.'
+    : isAdministrative
+      ? 'Ma’muriy organga murojaat qilinganligi yoki qaror/harakat ustidan shikoyat asoslari ko‘rsatiladi.'
+      : 'Qonun yoki shartnomada nazarda tutilgan bo‘lsa, sudgacha tartib ko‘rsatiladi.'
+}
 
 7. Ilovalar ro‘yxati
 ${listFiles(uploadedFiles)}

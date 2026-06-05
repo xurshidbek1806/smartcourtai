@@ -62,7 +62,8 @@ const DISPUTE_MAP = {
   'Fuqarolik nizosi': 'civil',
   'Mehnat nizosi': 'labor',
   'Iqtisodiy nizosi': 'economic',
-  'Oilaviy nizosi': 'family'
+  'Oilaviy nizosi': 'family',
+  'Ma’muriy shikoyat': 'administrative'
 };
 
 const fileInput = ref(null);
@@ -78,13 +79,37 @@ const disputeTypes = [
   { title: 'Fuqarolik nizosi', icon: Home, text: 'Shaxsiy va mulkiy munosabatlar.' },
   { title: 'Mehnat nizosi', icon: Building2, text: 'Ish haqi, kompensatsiya, shartnoma.' },
   { title: 'Iqtisodiy nizosi', icon: Landmark, text: 'Yuridik shaxslar o‘rtasidagi kelishuvlar.' },
-  { title: 'Oilaviy nizosi', icon: Scale, text: 'Ajrim, aliment, mol-mulk bo‘linishi.' }
+  { title: 'Oilaviy nizosi', icon: Scale, text: 'Ajrim, aliment, mol-mulk bo‘linishi.' },
+  { title: 'Ma’muriy shikoyat', icon: FileText, text: 'Davlat organi qarori yoki harakati.' }
 ];
 
 const steps = ['Nizo turi', 'Tomonlar', 'Tafsilotlar', 'Dalillar', 'Yuborish'];
+const templateChoices = [
+  'Fuqarolik da’vo arizasi',
+  'Mehnat nizosi',
+  'Oila nizosi',
+  'Ma’muriy shikoyat',
+  'Sud qarori loyihasi'
+];
+const demoFlow = [
+  'Ariza turini tanlash',
+  'Tomonlar va tafsilotlarni kiritish',
+  'AI bilan tekshirish',
+  'Rasmiy A4 preview',
+  '.doc sifatida yuklash',
+  'Sudya SmartJudge’da qaror ko‘rishi',
+  'Sudya rasmiy shablonda export qilishi'
+];
 
 const progress = computed(() => `${(step.value / 5) * 100}%`);
 const currentTemplate = computed(() => getClaimTemplateByDispute(form.selectedType));
+const compactLegalReferences = computed(() =>
+  legalReferences.map((reference) => ({
+    ...reference,
+    summary:
+      reference.title.length > 86 ? `${reference.title.slice(0, 86).trim()}...` : reference.title
+  }))
+);
 const next = () => (step.value = Math.min(5, step.value + 1));
 const prev = () => (step.value = Math.max(1, step.value - 1));
 
@@ -154,6 +179,8 @@ const buildClaimExportPayload = () => ({
   uploadedFiles: uploadedFiles.value,
   validation: validation.data
 });
+
+const claimPreviewText = computed(() => buildClaimDocument(buildClaimExportPayload()));
 
 const exportClaimDoc = () => {
   const payload = buildClaimExportPayload();
@@ -355,7 +382,22 @@ const handleNext = () => {
             <BaseCard variant="filled" class="template-card">
               <p class="eyebrow">Tanlangan huquqiy shablon</p>
               <h3>{{ currentTemplate.name }}</h3>
-              <p>{{ currentTemplate.format }} • {{ currentTemplate.basis.join(', ') }}</p>
+              <p>
+                {{ form.selectedType }} uchun rasmiy struktura: {{ currentTemplate.format }} •
+                {{ currentTemplate.basis.join(', ') }}
+              </p>
+              <div class="template-list compact">
+                <span
+                  v-for="templateName in templateChoices"
+                  :key="templateName"
+                  :class="{
+                    selected:
+                      templateName === form.selectedType || templateName === currentTemplate.name
+                  }"
+                >
+                  {{ templateName }}
+                </span>
+              </div>
             </BaseCard>
             <div class="grid grid-2 choice-grid">
               <BaseCard
@@ -572,20 +614,40 @@ const handleNext = () => {
                 Foydalanuvchi uchun .doc ko‘rinishida, backend uchun JSON metadata. Yakuniy
                 topshirish bosqichida PDF/PDF-A va ERI backendda shakllantiriladi.
               </p>
+              <div class="trust-banner">
+                Bu hujjat avtomatik tayyorlangan. Yakuniy tasdiq mas’ul shaxs tomonidan amalga
+                oshiriladi.
+              </div>
               <div class="template-list">
                 <span v-for="field in currentTemplate.requiredFields" :key="field">{{
                   field
                 }}</span>
               </div>
               <div class="toolbar">
-                <BaseButton variant="secondary" :icon="FileDown" @click="exportClaimDoc">
-                  Ariza .doc yuklash
+                <BaseButton :icon="FileDown" @click="exportClaimDoc">
+                  Rasmiy hujjatni yuklash
                 </BaseButton>
                 <BaseButton variant="secondary" :icon="FileText" @click="exportClaimJson">
-                  JSON paketi
+                  Texnik metadata
                 </BaseButton>
               </div>
             </BaseCard>
+            <section class="document-stage">
+              <div class="preview-header">
+                <div>
+                  <p class="eyebrow">Yakuniy ariza preview</p>
+                  <h3>Qog‘ozda chiqadigan rasmiy ko‘rinish</h3>
+                </div>
+                <span class="template-pill">{{ form.selectedType }}</span>
+              </div>
+              <article class="official-paper">
+                <div class="paper-meta">
+                  {{ currentTemplate.name }} · {{ currentTemplate.paper.size }} ·
+                  {{ currentTemplate.paper.font }}
+                </div>
+                <pre class="paper-text" v-text="claimPreviewText" />
+              </article>
+            </section>
             <BaseCard variant="filled">
               <h3>MediatoBot tavsiyasi</h3>
               <p>
@@ -633,14 +695,22 @@ const handleNext = () => {
             <strong>{{ currentTemplate.name }}</strong>
             <p>{{ currentTemplate.basis.join(', ') }}</p>
             <a
-              v-for="reference in legalReferences"
+              v-for="reference in compactLegalReferences"
               :key="reference.code"
               :href="reference.url"
               target="_blank"
               rel="noreferrer"
             >
-              {{ reference.code }}
+              <span>{{ reference.code }}</span>
+              <small>{{ reference.summary }}</small>
+              <b>To‘liq ko‘rish</b>
             </a>
+          </div>
+          <div class="demo-flow">
+            <p class="eyebrow">Demo oqimi</p>
+            <ol>
+              <li v-for="item in demoFlow" :key="item">{{ item }}</li>
+            </ol>
           </div>
         </aside>
       </div>
@@ -768,6 +838,12 @@ h2 {
   color: var(--gray-700);
   font-size: 12px;
   font-weight: 700;
+}
+
+.template-list.compact span.selected {
+  border-color: var(--gray-900);
+  background: var(--gray-900);
+  color: var(--color-white);
 }
 
 .selected {
@@ -923,6 +999,85 @@ textarea {
   margin-top: 24px;
 }
 
+.trust-banner {
+  margin-top: 14px;
+  border: 1px solid color-mix(in srgb, var(--stat-blue) 24%, var(--border-subtle));
+  border-radius: var(--radius-md);
+  background: var(--stat-blue-soft);
+  padding: 12px 14px;
+  color: var(--gray-800);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.document-stage {
+  margin: 18px 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--gray-100) 80%, transparent), transparent),
+    var(--gray-100);
+  padding: 18px;
+}
+
+.preview-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.preview-header h3 {
+  margin: 2px 0 0;
+  color: var(--gray-900);
+  font-size: 20px;
+}
+
+.template-pill {
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-full);
+  background: var(--color-white);
+  padding: 8px 12px;
+  color: var(--gray-800);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.official-paper {
+  box-sizing: border-box;
+  width: min(100%, 210mm);
+  min-height: 620px;
+  margin: 0 auto;
+  border: 1px solid color-mix(in srgb, var(--gray-300) 70%, var(--border-subtle));
+  background: var(--color-white);
+  box-shadow: 0 22px 55px rgb(15 23 42 / 12%);
+  padding: 24mm 15mm 22mm 30mm;
+  color: #111827;
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 14pt;
+  line-height: 1.55;
+}
+
+.paper-meta {
+  margin-bottom: 10mm;
+  border-bottom: 1px solid #d1d5db;
+  padding-bottom: 4mm;
+  color: #6b7280;
+  font-family: Arial, sans-serif;
+  font-size: 9pt;
+}
+
+.paper-text {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
 .ai-panel {
   position: sticky;
   top: 84px;
@@ -964,9 +1119,47 @@ textarea {
 }
 
 .legal-box a {
-  color: var(--stat-blue);
-  font-weight: 700;
+  display: grid;
+  gap: 3px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  padding: 10px;
+  color: var(--gray-800);
   text-decoration: none;
+}
+
+.legal-box a span {
+  color: var(--gray-900);
+  font-weight: 800;
+}
+
+.legal-box a small {
+  color: var(--gray-500);
+  line-height: 1.45;
+}
+
+.legal-box a b {
+  color: var(--stat-blue);
+  font-size: 12px;
+}
+
+.demo-flow {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 16px;
+}
+
+.demo-flow ol {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 18px;
+  color: var(--gray-700);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .spin {
