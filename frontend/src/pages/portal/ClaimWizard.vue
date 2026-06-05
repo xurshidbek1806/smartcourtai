@@ -28,8 +28,11 @@ import { createClaim, ensureAuth, submitClaim, uploadDocument, validateClaim } f
 import {
   buildClaimDocument,
   buildClaimMetadata,
+  demoOneIdProfile,
   downloadBlob,
+  formatOfficialDate,
   getClaimTemplateByDispute,
+  getOfficialLineBlocks,
   legalReferences,
   slugifyDocumentName,
   toWordHtml
@@ -40,21 +43,31 @@ const router = useRouter();
 const step = ref(1);
 const submitting = ref(false);
 
+const demoClaimDetails = {
+  title: 'pul mablag‘ini undirish to‘g‘risida',
+  description:
+    'Men Fayzullayev Jaxongir Azam o‘g‘li 2026 yil 12 may kuni telefonimni ta’mirlash uchun “Usta Servis” MChJga topshirdim. Xizmat haqi sifatida 1 800 000 so‘m to‘ladim, lekin telefonim ta’mirlanmasdan qaytarildi. Pulimni qaytarishni so‘radim, javobgar rad etdi. Chek va yozishmalar menda mavjud. Sud orqali pulimni va sud xarajatlarini undirishni so‘rayman.',
+  amount: '1 800 000 so‘m',
+  eventDate: '12.05.2026',
+  preTrial: 'Javobgarga pulni qaytarish bo‘yicha murojaat qilingan, biroq talab bajarilmagan.'
+};
+
 const form = reactive({
   selectedType: 'Mehnat nizosi',
   partyType: 'Jismoniy shaxs',
-  claimantName: '',
-  claimantPinfl: '',
-  claimantAddress: '',
-  claimantPhone: '',
-  respondentName: '',
-  respondentPinfl: '',
-  respondentAddress: '',
-  respondentPhone: '',
-  title: '',
-  description: '',
-  amount: '',
-  eventDate: ''
+  courtName: 'Fuqarolik ishlari bo‘yicha Toshkent shahar Yakkasaroy tumanlararo sudiga',
+  claimantName: demoOneIdProfile.fullName,
+  claimantBirthDate: demoOneIdProfile.birthDate,
+  claimantPinfl: demoOneIdProfile.pinfl,
+  claimantPassport: demoOneIdProfile.passport,
+  claimantAddress: demoOneIdProfile.address,
+  claimantPhone: demoOneIdProfile.phone,
+  claimantEmail: demoOneIdProfile.email,
+  respondentName: '“Usta Servis” MChJ',
+  respondentPinfl: '309123456',
+  respondentAddress: 'Toshkent shahar, Chilonzor tumani, Bunyodkor ko‘chasi, 18-uy',
+  respondentPhone: '+998 71 200-20-20',
+  ...demoClaimDetails
 });
 
 // Uzbek label → backend DisputeType enum.
@@ -86,23 +99,24 @@ const disputeTypes = [
 const steps = ['Nizo turi', 'Tomonlar', 'Tafsilotlar', 'Dalillar', 'Yuborish'];
 const templateChoices = [
   'Fuqarolik da’vo arizasi',
-  'Mehnat nizosi',
-  'Oila nizosi',
+  'Mehnat nizosi bo‘yicha da’vo arizasi',
+  'Oila nizosi bo‘yicha da’vo arizasi',
+  'Iqtisodiy sudga da’vo arizasi',
   'Ma’muriy shikoyat',
-  'Sud qarori loyihasi'
+  'Kassatsiya shikoyati'
 ];
 const demoFlow = [
-  'Ariza turini tanlash',
-  'Tomonlar va tafsilotlarni kiritish',
-  'AI bilan tekshirish',
-  'Rasmiy A4 preview',
-  '.doc sifatida yuklash',
-  'Sudya SmartJudge’da qaror ko‘rishi',
-  'Sudya rasmiy shablonda export qilishi'
+  'Fuqaro OneID orqali kiradi',
+  'Profil ma’lumotlari avtomatik to‘ldiriladi',
+  'Fuqaro shikoyatini advokatga aytganday yozadi',
+  'Tizim matndan talab, holat va dalillarni ajratadi',
+  'Rasmiy A4 preview shakllanadi',
+  '.doc sifatida yuklab olinadi'
 ];
 
 const progress = computed(() => `${(step.value / 5) * 100}%`);
 const currentTemplate = computed(() => getClaimTemplateByDispute(form.selectedType));
+const officialDocumentDate = computed(() => formatOfficialDate());
 const compactLegalReferences = computed(() =>
   legalReferences.map((reference) => ({
     ...reference,
@@ -132,6 +146,30 @@ const saveDraft = () => {
     type: 'success',
     title: 'Qoralama saqlandi',
     text: 'Ariza qoralamasi lokal saqlandi.'
+  });
+};
+
+const applyOneIdDemoProfile = () => {
+  form.claimantName = demoOneIdProfile.fullName;
+  form.claimantBirthDate = demoOneIdProfile.birthDate;
+  form.claimantPinfl = demoOneIdProfile.pinfl;
+  form.claimantPassport = demoOneIdProfile.passport;
+  form.claimantAddress = demoOneIdProfile.address;
+  form.claimantPhone = demoOneIdProfile.phone;
+  form.claimantEmail = demoOneIdProfile.email;
+  ui.pushToast({
+    type: 'success',
+    title: 'OneID profil to‘ldirildi',
+    text: `${demoOneIdProfile.fullName} ma’lumotlari arizaga qo‘shildi.`
+  });
+};
+
+const applyDemoClaimDetails = () => {
+  Object.assign(form, demoClaimDetails);
+  ui.pushToast({
+    type: 'success',
+    title: 'Demo tavsif to‘ldirildi',
+    text: 'Ariza mavzusi, voqea bayoni, summa va sudgacha murojaat demo holatga qaytarildi.'
   });
 };
 
@@ -181,6 +219,7 @@ const buildClaimExportPayload = () => ({
 });
 
 const claimPreviewText = computed(() => buildClaimDocument(buildClaimExportPayload()));
+const claimPreviewBlocks = computed(() => getOfficialLineBlocks(claimPreviewText.value));
 
 const exportClaimDoc = () => {
   const payload = buildClaimExportPayload();
@@ -221,14 +260,17 @@ const exportClaimJson = () => {
 const runClaimValidator = async () => {
   const textParts = [
     `Nizo turi: ${form.selectedType}`,
+    form.courtName && `Sud: ${form.courtName}`,
     form.title && `Sarlavha: ${form.title}`,
     form.claimantName && `Da’vogar: ${form.claimantName}`,
+    form.claimantPinfl && `Da’vogar JShShIR: ${form.claimantPinfl}`,
     form.claimantAddress && `Da’vogar manzili: ${form.claimantAddress}`,
     form.respondentName && `Javobgar: ${form.respondentName}`,
     form.respondentAddress && `Javobgar manzili: ${form.respondentAddress}`,
     form.amount && `Nizo summasi: ${form.amount}`,
     form.eventDate && `Voqea sanasi: ${form.eventDate}`,
-    form.description && `\nMohiyati: ${form.description}`
+    form.preTrial && `Sudgacha murojaat: ${form.preTrial}`,
+    form.description && `\nFuqaro shikoyati: ${form.description}`
   ].filter(Boolean);
   const fullText = textParts.join('\n');
 
@@ -416,7 +458,20 @@ const handleNext = () => {
           </template>
 
           <template v-else-if="step === 2">
-            <h2>2. Tomonlar</h2>
+            <h2>2. OneID profil va tomonlar</h2>
+            <BaseCard variant="filled" class="oneid-card">
+              <div>
+                <p class="eyebrow">OneID orqali olingan fuqaro ma’lumotlari</p>
+                <h3>{{ demoOneIdProfile.fullName }}</h3>
+                <p>
+                  JShShIR: {{ demoOneIdProfile.pinfl }} • Pasport: {{ demoOneIdProfile.passport }} •
+                  {{ demoOneIdProfile.verification }}
+                </p>
+              </div>
+              <BaseButton variant="secondary" size="sm" @click="applyOneIdDemoProfile">
+                Demo AKK ma’lumotlarini to‘ldirish
+              </BaseButton>
+            </BaseCard>
             <div class="toolbar">
               <BaseButton
                 :variant="form.partyType === 'Jismoniy shaxs' ? 'primary' : 'secondary'"
@@ -433,15 +488,26 @@ const handleNext = () => {
             </div>
             <div class="grid grid-2 form-grid">
               <BaseInput
+                v-model="form.courtName"
+                label="Sud nomi"
+                placeholder="Fuqarolik ishlari bo‘yicha ... sudiga"
+              />
+              <BaseInput
                 v-model="form.claimantName"
-                label="Da’vogar F.I.Sh / tashkilot"
-                placeholder="Karimov Akmal"
+                label="Da’vogar F.I.Sh"
+                placeholder="Fayzullayev Jaxongir Azam o‘g‘li"
+              />
+              <BaseInput
+                v-model="form.claimantBirthDate"
+                label="Tug‘ilgan sana"
+                placeholder="14.05.1995"
               />
               <BaseInput
                 v-model="form.claimantPinfl"
-                label="Da’vogar PINFL / INN"
+                label="JShShIR"
                 placeholder="12345678901234"
               />
+              <BaseInput v-model="form.claimantPassport" label="Pasport" placeholder="AD 1234567" />
               <BaseInput
                 v-model="form.claimantAddress"
                 label="Da’vogar manzili"
@@ -449,8 +515,13 @@ const handleNext = () => {
               />
               <BaseInput
                 v-model="form.claimantPhone"
-                label="Da’vogar telefon / email"
+                label="Da’vogar telefon"
                 placeholder="+998 90 000 00 00"
+              />
+              <BaseInput
+                v-model="form.claimantEmail"
+                label="Da’vogar email"
+                placeholder="name@example.uz"
               />
               <BaseInput
                 v-model="form.respondentName"
@@ -479,16 +550,33 @@ const handleNext = () => {
           </template>
 
           <template v-else-if="step === 3">
-            <h2>3. Nizo tafsilotlari</h2>
+            <h2>3. Shikoyatni erkin yozing</h2>
+            <BaseCard variant="filled" class="auto-date-card">
+              <div>
+                <p class="eyebrow">Avtomatik hujjat sanasi</p>
+                <h3>{{ officialDocumentDate }}</h3>
+                <p>
+                  Bu sana ariza qog‘ozidagi yakuniy <strong>Sana</strong> qatoriga avtomatik
+                  qo‘yiladi. Voqea sanasi esa alohida maydon sifatida qoladi.
+                </p>
+              </div>
+              <BaseButton variant="secondary" size="sm" @click="applyDemoClaimDetails">
+                Demo tavsifni qayta to‘ldirish
+              </BaseButton>
+            </BaseCard>
             <div class="grid form-grid">
               <BaseInput
                 v-model="form.title"
-                label="Sarlavha"
-                placeholder="Mehnat kompensatsiyasi bo‘yicha da’vo"
+                label="Ariza mavzusi"
+                placeholder="pul mablag‘ini undirish to‘g‘risida"
               />
               <label class="textarea">
-                <span>Nizo mohiyati</span>
-                <textarea v-model="form.description" rows="7" placeholder="Kamida 200 belgi..." />
+                <span>Fuqaro shikoyati</span>
+                <textarea
+                  v-model="form.description"
+                  rows="8"
+                  placeholder="Masalan: Men Fayzullayev Jaxongir Azam o‘g‘li ... shunaqa holat bo‘ldi, chek bor, pulimni qaytarishmadi..."
+                />
               </label>
               <div class="grid grid-2">
                 <BaseInput v-model="form.amount" label="Nizo summasi" placeholder="50 000 000" />
@@ -499,6 +587,14 @@ const handleNext = () => {
                   :icon="Calendar"
                 />
               </div>
+              <label class="textarea">
+                <span>Sudgacha murojaat / talabnoma</span>
+                <textarea
+                  v-model="form.preTrial"
+                  rows="3"
+                  placeholder="Javobgarga murojaat qilinganmi, rad javobi bormi, talabnoma yuborilganmi?"
+                />
+              </label>
               <BaseButton :icon="Sparkles" :loading="validation.loading" @click="runClaimValidator">
                 {{
                   validation.loading
@@ -611,9 +707,13 @@ const handleNext = () => {
               <p class="eyebrow">Yuklanadigan ariza paketi</p>
               <h3>{{ currentTemplate.name }}</h3>
               <p>
-                Foydalanuvchi uchun .doc ko‘rinishida, backend uchun JSON metadata. Yakuniy
-                topshirish bosqichida PDF/PDF-A va ERI backendda shakllantiriladi.
+                Foydalanuvchi uchun .doc ko‘rinishida, texnik taraf uchun JSON metadata. Hozirgi
+                oqim frontendda ishlaydi; real OneID, ERI va serverda saqlash keyingi bosqichda
+                ulanadi.
               </p>
+              <div class="document-date-note">
+                Ariza sanasi avtomatik: <strong>{{ officialDocumentDate }}</strong>
+              </div>
               <div class="trust-banner">
                 Bu hujjat avtomatik tayyorlangan. Yakuniy tasdiq mas’ul shaxs tomonidan amalga
                 oshiriladi.
@@ -641,11 +741,31 @@ const handleNext = () => {
                 <span class="template-pill">{{ form.selectedType }}</span>
               </div>
               <article class="official-paper">
-                <div class="paper-meta">
-                  {{ currentTemplate.name }} · {{ currentTemplate.paper.size }} ·
-                  {{ currentTemplate.paper.font }}
+                <div class="paper-body">
+                  <template
+                    v-for="(block, index) in claimPreviewBlocks"
+                    :key="`${block.type}-${index}`"
+                  >
+                    <div v-if="block.type === 'recipient-spacer'" class="recipient-spacer" />
+                    <div v-else-if="block.type === 'spacer'" class="spacer" />
+                    <h1 v-else-if="block.type === 'title'">{{ block.text }}</h1>
+                    <p v-else-if="block.type === 'subtitle'" class="document-subtitle">
+                      {{ block.text }}
+                    </p>
+                    <h2 v-else-if="block.type === 'section'">{{ block.text }}</h2>
+                    <p v-else-if="block.type === 'list'" class="list-item">{{ block.text }}</p>
+                    <p v-else-if="block.type === 'field'">
+                      <strong>{{ block.label }}:</strong>
+                      <template v-if="block.value"> {{ block.value }}</template>
+                    </p>
+                    <div v-else-if="block.type === 'recipient'" class="recipient-line">
+                      <strong v-if="block.value">{{ block.label }}:</strong>
+                      <template v-if="block.value"> {{ block.value }}</template>
+                      <strong v-else>{{ block.text }}</strong>
+                    </div>
+                    <p v-else>{{ block.text }}</p>
+                  </template>
                 </div>
-                <pre class="paper-text" v-text="claimPreviewText" />
               </article>
             </section>
             <BaseCard variant="filled">
@@ -707,7 +827,7 @@ const handleNext = () => {
             </a>
           </div>
           <div class="demo-flow">
-            <p class="eyebrow">Demo oqimi</p>
+            <p class="eyebrow">Ariza shakllanish oqimi</p>
             <ol>
               <li v-for="item in demoFlow" :key="item">{{ item }}</li>
             </ol>
@@ -818,6 +938,42 @@ h2 {
 }
 
 .template-card p {
+  margin: 0;
+  color: var(--gray-500);
+  line-height: 1.5;
+}
+
+.oneid-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 16px 0;
+}
+
+.oneid-card h3 {
+  margin: 4px 0 8px;
+}
+
+.oneid-card p {
+  margin: 0;
+  color: var(--gray-500);
+  line-height: 1.5;
+}
+
+.auto-date-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 16px 0;
+}
+
+.auto-date-card h3 {
+  margin: 4px 0 8px;
+}
+
+.auto-date-card p {
   margin: 0;
   color: var(--gray-500);
   line-height: 1.5;
@@ -1011,6 +1167,17 @@ textarea {
   line-height: 1.5;
 }
 
+.document-date-note {
+  margin-top: 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  padding: 10px 12px;
+  color: var(--gray-700);
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .document-stage {
   margin: 18px 0;
   border: 1px solid var(--border-subtle);
@@ -1060,22 +1227,59 @@ textarea {
   line-height: 1.55;
 }
 
-.paper-meta {
-  margin-bottom: 10mm;
-  border-bottom: 1px solid #d1d5db;
-  padding-bottom: 4mm;
-  color: #6b7280;
-  font-family: Arial, sans-serif;
-  font-size: 9pt;
-}
-
-.paper-text {
+.paper-body {
   margin: 0;
-  white-space: pre-wrap;
-  word-break: break-word;
   font-family: inherit;
   font-size: inherit;
   line-height: inherit;
+}
+
+.paper-body :deep(.recipient-line) {
+  max-width: 96mm;
+  margin-left: auto;
+  text-align: left;
+  line-height: 1.35;
+}
+
+.paper-body :deep(.recipient-line:first-child) {
+  font-weight: 700;
+}
+
+.paper-body :deep(.recipient-spacer) {
+  height: 2.5mm;
+}
+
+.paper-body :deep(h1) {
+  margin: 10mm 0 2mm;
+  text-align: center;
+  font-size: 16pt;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.paper-body :deep(.document-subtitle) {
+  margin: 0 0 7mm;
+  text-align: center;
+}
+
+.paper-body :deep(h2) {
+  margin: 6mm 0 2mm;
+  font-size: 14pt;
+  font-weight: 700;
+}
+
+.paper-body :deep(p) {
+  margin: 0 0 2.5mm;
+  text-align: justify;
+}
+
+.paper-body :deep(.list-item) {
+  margin-left: 8mm;
+  text-indent: -6mm;
+}
+
+.paper-body :deep(.spacer) {
+  height: 3mm;
 }
 
 .ai-panel {
@@ -1183,6 +1387,11 @@ textarea {
 
   .validator-summary {
     align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .auto-date-card,
+  .oneid-card {
     flex-direction: column;
   }
 }

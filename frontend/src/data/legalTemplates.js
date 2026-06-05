@@ -3,6 +3,12 @@ const GENERATED_AT_FORMATTER = new Intl.DateTimeFormat('uz-UZ', {
   timeStyle: 'short'
 });
 
+const DOCUMENT_DATE_FORMATTER = new Intl.DateTimeFormat('uz-UZ', {
+  dateStyle: 'long'
+});
+
+export const formatOfficialDate = (date = new Date()) => DOCUMENT_DATE_FORMATTER.format(date);
+
 export const legalReferences = [
   {
     code: 'FPK 188-modda',
@@ -51,6 +57,17 @@ export const legalReferences = [
   }
 ];
 
+export const demoOneIdProfile = {
+  fullName: 'Fayzullayev Jaxongir Azam o‘g‘li',
+  birthDate: '14.05.1995',
+  pinfl: '31405951234567',
+  passport: 'AD 1234567',
+  address: 'Toshkent shahar, Yakkasaroy tumani, Bobur ko‘chasi, 12-uy, 45-xonadon',
+  phone: '+998 90 123-45-67',
+  email: 'j.fayzullayev@example.uz',
+  verification: 'OneID orqali tasdiqlangan demo profil'
+};
+
 export const claimTemplates = {
   civil_claim: {
     id: 'civil_claim',
@@ -72,6 +89,53 @@ export const claimTemplates = {
       'Da’vo bahosi',
       'Holatlar va dalillar',
       'Sudgacha hal qilish ma’lumoti',
+      'Ilovalar ro‘yxati',
+      'Imzo yoki ERI'
+    ]
+  },
+  labor_claim: {
+    id: 'labor_claim',
+    name: 'Mehnat nizosi bo‘yicha da’vo arizasi',
+    format: 'DOC/PDF + JSON metadata',
+    paper: {
+      size: 'A4',
+      margins: '20mm 15mm 20mm 30mm',
+      font: 'Times New Roman',
+      fontSize: '14pt'
+    },
+    basis: ['FPK 188-modda', 'FPK 189-modda', 'Mehnat kodeksi'],
+    appliesTo: ['Mehnat nizosi'],
+    requiredFields: [
+      'Sud nomi',
+      'Da’vogar OneID ma’lumotlari',
+      'Ish beruvchi ma’lumotlari',
+      'Mehnat munosabati bayoni',
+      'Undiriladigan summa',
+      'Holatlar va dalillar',
+      'Sudgacha murojaat ma’lumoti',
+      'Ilovalar ro‘yxati',
+      'Imzo yoki ERI'
+    ]
+  },
+  family_claim: {
+    id: 'family_claim',
+    name: 'Oila nizosi bo‘yicha da’vo arizasi',
+    format: 'DOC/PDF + JSON metadata',
+    paper: {
+      size: 'A4',
+      margins: '20mm 15mm 20mm 30mm',
+      font: 'Times New Roman',
+      fontSize: '14pt'
+    },
+    basis: ['FPK 188-modda', 'FPK 189-modda', 'Oila kodeksi'],
+    appliesTo: ['Oilaviy nizosi'],
+    requiredFields: [
+      'Sud nomi',
+      'Da’vogar OneID ma’lumotlari',
+      'Javobgar ma’lumotlari',
+      'Farzand yoki oila munosabati ma’lumotlari',
+      'Talab mazmuni',
+      'Holatlar va dalillar',
       'Ilovalar ro‘yxati',
       'Imzo yoki ERI'
     ]
@@ -145,6 +209,9 @@ export const getClaimTemplateByDispute = (disputeType = '') => {
   if (normalized.includes('iqtisod')) return claimTemplates.economic_claim;
   if (normalized.includes('ma’mur') || normalized.includes("ma'mur"))
     return claimTemplates.administrative_claim;
+  if (normalized.includes('mehnat')) return claimTemplates.labor_claim;
+  if (normalized.includes('oilav') || normalized.includes('oila'))
+    return claimTemplates.family_claim;
   return claimTemplates.civil_claim;
 };
 
@@ -155,10 +222,13 @@ const valueOrBlank = (value, fallback = '________________') => {
 
 const getClaimParties = (form) => ({
   claimant: {
-    name: valueOrBlank(form.claimantName, '________________'),
-    id: valueOrBlank(form.claimantPinfl, '________________'),
-    address: valueOrBlank(form.claimantAddress, '________________'),
-    phone: valueOrBlank(form.claimantPhone, '________________')
+    name: valueOrBlank(form.claimantName, demoOneIdProfile.fullName),
+    birthDate: valueOrBlank(form.claimantBirthDate, demoOneIdProfile.birthDate),
+    id: valueOrBlank(form.claimantPinfl, demoOneIdProfile.pinfl),
+    passport: valueOrBlank(form.claimantPassport, demoOneIdProfile.passport),
+    address: valueOrBlank(form.claimantAddress, demoOneIdProfile.address),
+    phone: valueOrBlank(form.claimantPhone, demoOneIdProfile.phone),
+    email: valueOrBlank(form.claimantEmail, demoOneIdProfile.email)
   },
   respondent: {
     name: valueOrBlank(form.respondentName ?? form.fullName, '________________'),
@@ -168,29 +238,120 @@ const getClaimParties = (form) => ({
   }
 });
 
-const listFiles = (files = []) => {
-  if (!files.length) return '1. ________________________________';
-  return files.map((file, index) => `${index + 1}. ${file.name} — ${file.result}`).join('\n');
+const listFiles = (files = [], fallbackItems = []) => {
+  const source = files.length
+    ? files.map((file) => `${file.name} — ${file.result}`)
+    : fallbackItems.filter(Boolean);
+
+  if (!source.length)
+    return '1. Arizadagi holatlarni tasdiqlovchi hujjatlar mavjud bo‘lsa ilova qilinadi.';
+  return source.map((item, index) => `${index + 1}. ${item}`).join('\n');
+};
+
+const getDefaultEvidenceItems = (form) => {
+  const text = String(form.description ?? '').toLowerCase();
+  const items = [];
+
+  if (text.includes('chek')) items.push('To‘lov amalga oshirilganligini tasdiqlovchi chek.');
+  if (text.includes('yozishma')) items.push('Javobgar bilan yozishmalar nusxasi.');
+  if (text.includes('telefon'))
+    items.push('Telefon ta’mirga topshirilganligini tasdiqlovchi ma’lumotlar.');
+  if (String(form.preTrial ?? '').trim())
+    items.push('Javobgarga yuborilgan murojaat yoki talabnoma ma’lumotlari.');
+
+  return items.length
+    ? items
+    : ['Da’vo talablariga asos bo‘lgan holatlarni tasdiqlovchi mavjud ma’lumotlar.'];
+};
+
+const getDefaultAttachmentItems = (form) => [
+  'Da’vo arizasi nusxasi.',
+  ...getDefaultEvidenceItems(form),
+  'Da’vo bahosi hisob-kitobi.',
+  'Sud xarajatlari to‘langanligini tasdiqlovchi hujjat mavjud bo‘lsa.'
+];
+
+const titleForTemplate = (template) => {
+  if (template.id === 'administrative_claim') return 'ARIZA (SHIKOYAT)';
+  if (template.id === 'economic_claim') return 'DA’VO ARIZA';
+  return 'DA’VO ARIZASI';
+};
+
+const defaultCourtName = (template, form) => {
+  const typed = String(form.courtName ?? '').trim();
+  if (typed) return typed;
+  if (template.id === 'economic_claim') return '________________ iqtisodiy sudiga';
+  if (template.id === 'administrative_claim') return '________________ ma’muriy sudiga';
+  return 'Fuqarolik ishlari bo‘yicha ________________ sudiga';
+};
+
+const defaultClaimSubject = (template, form) => {
+  const title = String(form.title ?? '').trim();
+  if (title) return title;
+  if (template.id === 'labor_claim') return 'ish haqi va mehnat to‘lovlarini undirish to‘g‘risida';
+  if (template.id === 'family_claim') return 'aliment yoki oilaviy talab yuzasidan';
+  if (template.id === 'economic_claim') return 'qarzdorlikni undirish to‘g‘risida';
+  if (template.id === 'administrative_claim')
+    return 'davlat organi qarori yoki harakatini qonunga xilof deb topish to‘g‘risida';
+  return 'pul mablag‘i yoki majburiyatni undirish to‘g‘risida';
+};
+
+const requestIntro = (template) => {
+  if (template.id === 'administrative_claim') return 'Arizachining talabi';
+  if (template.id === 'economic_claim') return 'Da’vogarning talabi va hisob-kitobi';
+  return 'Da’vogarning talabi';
+};
+
+const buildRequestItems = (template, form) => {
+  const amount = valueOrBlank(form.amount, 'ko‘rsatilgan summa');
+  if (template.id === 'administrative_claim') {
+    return [
+      'Javobgar ma’muriy organning qarori yoki harakatini qonunga xilof deb topishni;',
+      'Buzilgan huquq va qonuniy manfaatlarni tiklash majburiyatini yuklashni;',
+      'Sud xarajatlari masalasini qonunchilikda belgilangan tartibda hal qilishni.'
+    ];
+  }
+  if (template.id === 'economic_claim') {
+    return [
+      `Javobgardan ${amount} miqdoridagi qarzdorlikni undirishni;`,
+      'Sud xarajatlarini javobgar zimmasiga yuklashni;'
+    ];
+  }
+  if (template.id === 'family_claim') {
+    return [
+      'Voyaga yetmagan farzand ta’minoti yoki oilaviy talabni qonunchilikda belgilangan tartibda qanoatlantirishni;',
+      'Sud hujjatini ijroga qaratishni;'
+    ];
+  }
+  return [
+    `Javobgardan ${amount} miqdoridagi talabni da’vogar foydasiga undirishni;`,
+    'Sud xarajatlarini javobgar zimmasiga yuklashni;',
+    'Ishni qonunchilikda belgilangan tartibda ko‘rib chiqishni.'
+  ];
 };
 
 export const buildClaimDocument = ({ form, uploadedFiles = [], validation = null }) => {
   const template = getClaimTemplateByDispute(form.selectedType);
-  const isEconomic = template.id === 'economic_claim';
-  const isAdministrative = template.id === 'administrative_claim';
   const parties = getClaimParties(form);
-  const courtName = isEconomic
-    ? '________________ iqtisodiy sudiga'
-    : isAdministrative
-      ? '________________ ma’muriy sudiga'
-      : '________________ fuqarolik ishlari bo‘yicha sudiga';
-  const generatedAt = GENERATED_AT_FORMATTER.format(new Date());
+  const courtName = defaultCourtName(template, form);
+  const documentDate = valueOrBlank(form.documentDate, formatOfficialDate());
+  const title = titleForTemplate(template);
+  const subject = defaultClaimSubject(template, form);
+  const evidenceItems = listFiles(uploadedFiles, getDefaultEvidenceItems(form));
+  const attachmentItems = listFiles(uploadedFiles, getDefaultAttachmentItems(form));
+  const requestItems = buildRequestItems(template, form)
+    .map((item, index) => `${index + 1}. ${item}`)
+    .join('\n');
 
   return `${courtName}
 
-Da’vogar: ${parties.claimant.name}
-PINFL / INN: ${parties.claimant.id}
-Manzil / rekvizitlar: ${parties.claimant.address}
-Telefon / email: ${parties.claimant.phone}
+${template.id === 'administrative_claim' ? 'Arizachi' : 'Da’vogar'}: ${parties.claimant.name}
+Tug‘ilgan sana: ${parties.claimant.birthDate}
+JShShIR: ${parties.claimant.id}
+Pasport: ${parties.claimant.passport}
+Yashash manzili: ${parties.claimant.address}
+Telefon: ${parties.claimant.phone}
+Elektron manzil: ${parties.claimant.email}
 
 Javobgar: ${parties.respondent.name}
 Javobgar turi: ${valueOrBlank(form.partyType)}
@@ -198,40 +359,49 @@ PINFL / INN: ${parties.respondent.id}
 Manzil / rekvizitlar: ${parties.respondent.address}
 Telefon / email: ${parties.respondent.phone}
 
-${valueOrBlank(form.title, 'DA’VO ARIZASI').toUpperCase()}
+Da’vo bahosi: ${valueOrBlank(form.amount, 'baholanmagan yoki ko‘rsatilmagan')}
 
-1. Da’vogarning talabi
-${valueOrBlank(form.title)}
+${title}
+${subject}
 
-2. Da’vo bahosi va hisob-kitob
-${valueOrBlank(form.amount, 'Da’vo bahosi ko‘rsatilmagan')}
+${requestIntro(template)}
+${valueOrBlank(form.title, subject)}
 
-3. Ish holatlari
-${valueOrBlank(form.description, 'Ish holatlari to‘ldirilmagan')}
+Ish holatlari
+Voqea sanasi: ${valueOrBlank(form.eventDate, 'aniq sana ko‘rsatilmagan')}
+${valueOrBlank(
+  form.description,
+  'Foydalanuvchi shikoyati kiritilmagan. Ariza mazmuni foydalanuvchi erkin yozgan matnidan avtomatik shakllantiriladi.'
+)}
 
-4. Talabni tasdiqlovchi dalillar
-${listFiles(uploadedFiles)}
+Talabni tasdiqlovchi dalillar
+${evidenceItems}
 
-5. Huquqiy asos
+Huquqiy asos
 ${template.basis.join(', ')}
 
-6. Sudgacha hal qilish tartibi
-${
-  isEconomic
+Sudgacha hal qilish tartibi
+${valueOrBlank(
+  form.preTrial,
+  template.id === 'economic_claim'
     ? 'Talabnoma yuborilganligi va natijasi ko‘rsatiladi.'
-    : isAdministrative
+    : template.id === 'administrative_claim'
       ? 'Ma’muriy organga murojaat qilinganligi yoki qaror/harakat ustidan shikoyat asoslari ko‘rsatiladi.'
       : 'Qonun yoki shartnomada nazarda tutilgan bo‘lsa, sudgacha tartib ko‘rsatiladi.'
-}
+)}
 
-7. Ilovalar ro‘yxati
-${listFiles(uploadedFiles)}
+S O‘ R A Y M A N:
+${requestItems}
 
-8. AI tekshiruv eslatmasi
+Ilovalar ro‘yxati
+${attachmentItems}
+
+AI tekshiruv eslatmasi
 ${validation?.summary || 'ClaimValidator tekshiruvi hali bajarilmagan yoki backend javobi yo‘q.'}
 
-Sana: ${valueOrBlank(form.eventDate, generatedAt)}
-Imzo / ERI: ________________________________`;
+Sana: ${documentDate}
+${template.id === 'administrative_claim' ? 'Arizachi' : 'Da’vogar'}: ${parties.claimant.name}
+Imzo: ________________________________`;
 };
 
 export const buildClaimMetadata = ({ form, uploadedFiles = [], validation = null }) => {
@@ -240,11 +410,13 @@ export const buildClaimMetadata = ({ form, uploadedFiles = [], validation = null
     document_type: 'claim',
     template_id: template.id,
     template_name: template.name,
-    recommended_formats: ['doc', 'pdf', 'json'],
+    recommended_formats: ['doc', 'docx', 'pdf', 'json'],
     paper: template.paper,
     production_note: 'Yakuniy topshirish uchun PDF/PDF-A va ERI backendda shakllantiriladi.',
+    document_date: valueOrBlank(form.documentDate, formatOfficialDate()),
     legal_basis: template.basis,
     required_fields: template.requiredFields,
+    one_id_profile: getClaimParties(form).claimant,
     parties: getClaimParties(form),
     form: { ...form },
     evidence: uploadedFiles.map(({ id, name, size, result }) => ({ id, name, size, result })),
@@ -325,54 +497,98 @@ const escapeHtml = (text) =>
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;');
 
-const renderOfficialLines = (body) => {
+export const getOfficialLineBlocks = (body) => {
   const lines = String(body ?? '').split('\n');
-  let html = '';
-  let firstBlock = true;
+  const blocks = [];
+  let inHeaderBlock = true;
+  let nextLineIsSubtitle = false;
 
   for (const rawLine of lines) {
     const line = rawLine.trim();
     if (!line) {
-      html += '<div class="spacer"></div>';
-      continue;
-    }
-
-    if (firstBlock) {
-      html += `<div class="recipient-block">${escapeHtml(line)}</div>`;
-      firstBlock = false;
-      continue;
-    }
-
-    if (/^(DA’VO ARIZASI|SUD HAL QILUV QARORI QORALAMASI)$/i.test(line)) {
-      html += `<h1>${escapeHtml(line)}</h1>`;
-      continue;
-    }
-
-    if (/^(KIRISH QISMI|BAYON QISMI|ASOSLANTIRUVCHI QISM|XULOSA QISMI)$/i.test(line)) {
-      html += `<h2>${escapeHtml(line)}</h2>`;
-      continue;
-    }
-
-    if (/^\d+\.\s/.test(line)) {
-      html += `<h2>${escapeHtml(line)}</h2>`;
+      blocks.push({ type: inHeaderBlock ? 'recipient-spacer' : 'spacer' });
       continue;
     }
 
     if (
-      /^(Da’vogar|Javobgar|PINFL \/ INN|Manzil|Telefon|Sana|Imzo|Sudya imzosi|Sud \/ sudya|Ish raqami|Ish nomi|Nizo turi|Taraflar|Huquqiy shablon|Asos|Yaratilgan vaqt):/.test(
+      /^(DA’VO ARIZASI|DA’VO ARIZA|ARIZA|ARIZA \(SHIKOYAT\)|KASSATSIYA SHIKOYATI|SUD HAL QILUV QARORI QORALAMASI)$/i.test(
+        line
+      )
+    ) {
+      inHeaderBlock = false;
+      nextLineIsSubtitle = true;
+      blocks.push({ type: 'title', text: line });
+      continue;
+    }
+
+    if (inHeaderBlock) {
+      const [label, ...rest] = line.split(':');
+      const value = rest.join(':').trim();
+      blocks.push(value ? { type: 'recipient', label, value } : { type: 'recipient', text: line });
+      continue;
+    }
+
+    if (
+      /^(KIRISH QISMI|BAYON QISMI|ASOSLANTIRUVCHI QISM|XULOSA QISMI|Ish holatlari|Talabni tasdiqlovchi dalillar|Huquqiy asos|Sudgacha hal qilish tartibi|S O‘ R A Y M A N:|Ilovalar ro‘yxati|AI tekshiruv eslatmasi|Da’vogarning talabi|Arizachining talabi|Da’vogarning talabi va hisob-kitobi)$/i.test(
+        line
+      )
+    ) {
+      blocks.push({ type: 'section', text: line });
+      continue;
+    }
+
+    if (nextLineIsSubtitle) {
+      nextLineIsSubtitle = false;
+      blocks.push({ type: 'subtitle', text: line });
+      continue;
+    }
+
+    if (/^\d+\.\s/.test(line)) {
+      blocks.push({ type: 'list', text: line });
+      continue;
+    }
+
+    if (
+      /^(Da’vogar|Arizachi|Shikoyat beruvchi|Javobgar|Javobgar turi|PINFL \/ INN|JShShIR|Pasport|Tug‘ilgan sana|Yashash manzili|Manzil|Telefon|Elektron manzil|Sana|Voqea sanasi|Imzo|Sudya imzosi|Sud \/ sudya|Ish raqami|Ish nomi|Nizo turi|Taraflar|Huquqiy shablon|Asos|Yaratilgan vaqt|Da’vo bahosi):/.test(
         line
       )
     ) {
       const [label, ...rest] = line.split(':');
-      html += `<p><strong>${escapeHtml(label)}:</strong>${escapeHtml(rest.join(':') ? ` ${rest.join(':').trim()}` : '')}</p>`;
+      blocks.push({ type: 'field', label, value: rest.join(':').trim() });
       continue;
     }
 
-    html += `<p>${escapeHtml(line)}</p>`;
+    blocks.push({ type: 'paragraph', text: line });
   }
 
-  return html;
+  return blocks;
 };
+
+export const renderOfficialLines = (body) =>
+  getOfficialLineBlocks(body)
+    .map((block) => {
+      if (block.type === 'recipient-spacer') return '<div class="recipient-spacer"></div>';
+      if (block.type === 'spacer') return '<div class="spacer"></div>';
+      if (block.type === 'title') return `<h1>${escapeHtml(block.text)}</h1>`;
+      if (block.type === 'subtitle')
+        return `<p class="document-subtitle">${escapeHtml(block.text)}</p>`;
+      if (block.type === 'section') return `<h2>${escapeHtml(block.text)}</h2>`;
+      if (block.type === 'list') return `<p class="list-item">${escapeHtml(block.text)}</p>`;
+      if (block.type === 'field') {
+        return `<p><strong>${escapeHtml(block.label)}:</strong>${escapeHtml(
+          block.value ? ` ${block.value}` : ''
+        )}</p>`;
+      }
+      if (block.type === 'recipient') {
+        return `<div class="recipient-line">${
+          block.value
+            ? `<strong>${escapeHtml(block.label)}:</strong> ${escapeHtml(block.value)}`
+            : `<strong>${escapeHtml(block.text)}</strong>`
+        }</div>`;
+      }
+      return `<p>${escapeHtml(block.text)}</p>`;
+    })
+    .join('');
 
 export const toWordHtml = (title, body, template = {}) => {
   const paper = template.paper || {
@@ -411,15 +627,6 @@ export const toWordHtml = (title, body, template = {}) => {
         padding: ${paper.margins || '20mm 15mm 20mm 30mm'};
       }
 
-      .template-meta {
-        border-bottom: 1px solid #d1d5db;
-        color: #6b7280;
-        font-family: Arial, sans-serif;
-        font-size: 9pt;
-        margin-bottom: 12mm;
-        padding-bottom: 4mm;
-      }
-
       .recipient-block {
         margin-left: auto;
         max-width: 85mm;
@@ -427,12 +634,32 @@ export const toWordHtml = (title, body, template = {}) => {
         font-weight: 700;
       }
 
+      .recipient-line {
+        margin-left: auto;
+        max-width: 95mm;
+        text-align: left;
+        line-height: 1.35;
+      }
+
+      .recipient-line:first-child {
+        font-weight: 700;
+      }
+
+      .recipient-spacer {
+        height: 2.5mm;
+      }
+
       h1 {
-        margin: 10mm 0 8mm;
+        margin: 10mm 0 2mm;
         text-align: center;
         font-size: 16pt;
         letter-spacing: 0.02em;
         text-transform: uppercase;
+      }
+
+      .document-subtitle {
+        margin: 0 0 7mm;
+        text-align: center;
       }
 
       h2 {
@@ -444,6 +671,11 @@ export const toWordHtml = (title, body, template = {}) => {
       p {
         margin: 0 0 2.5mm;
         text-align: justify;
+      }
+
+      .list-item {
+        margin-left: 8mm;
+        text-indent: -6mm;
       }
 
       .spacer {
@@ -462,17 +694,11 @@ export const toWordHtml = (title, body, template = {}) => {
           padding: 0;
         }
 
-        .template-meta {
-          display: none;
-        }
       }
     </style>
   </head>
   <body>
     <main class="page">
-      <div class="template-meta">
-        Shablon: ${escapeHtml(title)} · Qog‘oz: ${escapeHtml(paper.size || 'A4')} · Format: DOC/PDF uchun rasmiy struktura
-      </div>
       ${renderOfficialLines(body)}
     </main>
   </body>
