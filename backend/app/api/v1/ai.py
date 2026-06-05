@@ -242,33 +242,44 @@ async def auto_exec(case_id: int, user: CurrentUser):
 
 
 # ── AI Legal Assistant (chatbot) ─────────────────────────────
+# Minimum cosine similarity for a retrieved law to be considered relevant.
+# Anything below this is dropped — otherwise the LLM cites unrelated codices
+# for off-topic questions (e.g. "Davlat boji qancha?" returning Mehnat
+# kodeksi articles just because they were the top-3 by score).
+_RAG_RELEVANCE_THRESHOLD = 0.55
+
+
+async def _build_assistant_prompt(message: str, use_context: bool) -> tuple[str, bool]:
+    if not use_context:
+        return message, False
+    laws = await rag.retrieve_laws(message, limit=3)
+    relevant = [l for l in laws if (l.get("score") or 0) >= _RAG_RELEVANCE_THRESHOLD]
+    if not relevant:
+        return message, False
+    context = rag.format_laws(relevant)
+    prompt = (
+        f"## TEGISHLI QONUNLAR (faqat agar savolga to'g'ridan-to'g'ri "
+        f"aloqador bo'lsa, ulardan foydalan)\n{context}\n\n"
+        f"## SAVOL\n{message}"
+    )
+    return prompt, True
+
+
 @router.post("/assistant")
 async def assistant(payload: ChatMessage, user: CurrentUser):
-    context = ""
-    if payload.use_context:
-        laws = await rag.retrieve_laws(payload.message, limit=3)
-        context = rag.format_laws(laws)
-    prompt = payload.message
-    if context:
-        prompt = f"## TEGISHLI QONUNLAR\n{context}\n\n## SAVOL\n{payload.message}"
+    prompt, used = await _build_assistant_prompt(payload.message, payload.use_context)
     answer = await llm.chat(
         prompt,
         system=LEGAL_ASSISTANT_SYSTEM,
         temperature=0.3,
         num_predict=320,
     )
-    return {"answer": answer, "used_context": bool(context)}
+    return {"answer": answer, "used_context": used}
 
 
 @router.post("/assistant/stream")
 async def assistant_stream(payload: ChatMessage, user: CurrentUser):
-    context = ""
-    if payload.use_context:
-        laws = await rag.retrieve_laws(payload.message, limit=3)
-        context = rag.format_laws(laws)
-    prompt = payload.message
-    if context:
-        prompt = f"## TEGISHLI QONUNLAR\n{context}\n\n## SAVOL\n{payload.message}"
+    prompt, _used = await _build_assistant_prompt(payload.message, payload.use_context)
 
     async def gen():
         async for token in llm.stream_chat(
