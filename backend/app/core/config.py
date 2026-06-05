@@ -30,15 +30,16 @@ class Settings(BaseSettings):
 
     # Ollama / LLM
     OLLAMA_BASE_URL: str = "http://localhost:11434"
-    LLM_MODEL: str = "llama3.2:3b"
-    EMBED_MODEL: str = "nomic-embed-text"
+    LLM_MODEL: str = "qwen3.5:9b"
+    LLM_NUM_CTX: int = 8192
+    EMBED_MODEL: str = "bge-m3"
     LLM_TEMPERATURE: float = 0.3
 
     # Qdrant
     QDRANT_URL: str = "http://localhost:6333"
     QDRANT_LAWS_COLLECTION: str = "uz_laws"
     QDRANT_PRECEDENTS_COLLECTION: str = "uz_precedents"
-    EMBED_DIM: int = 768
+    EMBED_DIM: int = 1024
 
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"

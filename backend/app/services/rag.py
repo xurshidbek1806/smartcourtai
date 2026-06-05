@@ -18,11 +18,15 @@ def format_laws(laws: list[dict]) -> str:
         return ""
     blocks = []
     for law in laws:
-        code = law.get("code", "")
+        code_name = law.get("code_name") or law.get("code", "")
         article = law.get("article", "")
         title = law.get("title", "")
-        text = law.get("text", "")
-        blocks.append(f"[{code} {article}-modda] {title}\n{text}")
+        text = (law.get("text", "") or "").strip()
+        # Trim noisy PDF-extracted text — keep first ~600 chars so the LLM
+        # gets the article body without drowning in scanned-PDF fragments.
+        if len(text) > 600:
+            text = text[:600].rsplit(" ", 1)[0] + "..."
+        blocks.append(f"[{code_name} {article}-modda] {title}\n{text}")
     return "\n\n".join(blocks)
 
 
