@@ -124,6 +124,7 @@ export const RUNNERS = {
     }
   },
   '/judge/ai-tools/evidence-analyzer': {
+    loadingText: 'AI hujjatni tahlil qilmoqda — matn ajratish, faktlar va xavf belgilarini aniqlash...',
     fields: [
       {
         key: 'file',
@@ -137,16 +138,24 @@ export const RUNNERS = {
       await ensureAuth('judge');
       if (v.file instanceof File) {
         const r = await uploadDocument(v.file, { analyze: true });
-        const lines = [
-          `Fayl: ${r.filename} (${Math.round((r.size_bytes || 0) / 1024)} KB)`,
-          `Turi: ${r.kind}`,
-          `Matn ajratildi: ${r.text_extracted ? 'ha' : 'yo‘q'}`,
-          ...flatten(r.ai_analysis || {})
-        ];
-        return { title: 'EvidenceAnalyzer natijasi', lines, raw: r };
+        return {
+          title: 'Dalil tahlili tayyor',
+          meta: [
+            `Fayl: ${r.filename}`,
+            `Hajm: ${Math.round((r.size_bytes || 0) / 1024)} KB`,
+            `Turi: ${r.kind}`,
+            `Matn ajratildi: ${r.text_extracted ? 'ha' : 'yo‘q'}`
+          ],
+          sections: evidenceSections(r.ai_analysis),
+          raw: r
+        };
       }
       const r = await aiEvidenceText(v.text || '');
-      return { title: 'EvidenceAnalyzer natijasi', lines: flatten(r), raw: r };
+      return {
+        title: 'Dalil tahlili tayyor',
+        sections: evidenceSections(r),
+        raw: r
+      };
     }
   },
   '/portal/mediation': {
@@ -166,6 +175,26 @@ export const RUNNERS = {
     }
   }
 };
+
+function evidenceSections(a) {
+  if (!a || typeof a !== 'object') {
+    return [{ label: 'Tahlil natijasi', text: 'AI tahlil natijasi qaytmadi.' }];
+  }
+  if (a.raw && typeof a.raw === 'string') {
+    return [{ label: 'AI javobi', text: a.raw }];
+  }
+  const items = (v) => (Array.isArray(v) ? v.filter(Boolean).map((x) => String(x)) : []);
+  const out = [];
+  if (a.summary) out.push({ label: 'Qisqacha xulosa', text: String(a.summary) });
+  if (items(a.facts).length) out.push({ label: 'Aniqlangan faktlar', items: items(a.facts) });
+  if (items(a.key_dates).length) out.push({ label: 'Muhim sanalar', items: items(a.key_dates) });
+  if (items(a.amounts).length) out.push({ label: 'Summa va miqdorlar', items: items(a.amounts) });
+  if (items(a.named_parties).length) out.push({ label: 'Tomonlar', items: items(a.named_parties) });
+  if (items(a.risk_notes).length)
+    out.push({ label: 'Xavf belgilari', items: items(a.risk_notes), tone: 'warn' });
+  if (!out.length) out.push({ label: 'Natija', text: 'Hujjatdan huquqiy fakt topilmadi.' });
+  return out;
+}
 
 function flatten(obj, prefix = '') {
   const out = [];

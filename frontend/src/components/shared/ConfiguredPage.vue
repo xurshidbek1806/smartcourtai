@@ -212,10 +212,41 @@ const runAction = async (label) => {
               </BaseButton>
             </div>
 
-            <div v-if="apiResult" class="ai-output">
+            <div v-if="running" class="ai-loading">
+              <span class="spinner" />
+              <div>
+                <p class="loading-title">AI tahlil qilmoqda…</p>
+                <p class="loading-sub">{{ runner?.loadingText || 'Iltimos, biroz kuting.' }}</p>
+              </div>
+            </div>
+
+            <div v-else-if="apiResult" class="ai-output">
               <p class="eyebrow">AI natijasi</p>
               <h3>{{ apiResult.title }}</h3>
-              <p v-for="(line, i) in apiResult.lines" :key="i" class="ai-line">
+
+              <div v-if="apiResult.meta?.length" class="meta-row">
+                <span v-for="(m, i) in apiResult.meta" :key="i" class="meta-chip">{{ m }}</span>
+              </div>
+
+              <div v-if="apiResult.sections?.length" class="ai-sections">
+                <article
+                  v-for="(s, i) in apiResult.sections"
+                  :key="i"
+                  class="ai-section"
+                  :class="{ warn: s.tone === 'warn' }"
+                >
+                  <h4>{{ s.label }}</h4>
+                  <p v-if="s.text" class="section-text">{{ s.text }}</p>
+                  <ul v-if="s.items?.length" class="section-list">
+                    <li v-for="(item, j) in s.items" :key="j">
+                      <CheckCircle2 :size="14" />
+                      <span>{{ item }}</span>
+                    </li>
+                  </ul>
+                </article>
+              </div>
+
+              <p v-else v-for="(line, i) in apiResult.lines || []" :key="i" class="ai-line">
                 <CheckCircle2 :size="15" />{{ line }}
               </p>
             </div>
@@ -446,6 +477,126 @@ h1 {
   color: var(--gray-600);
   font-weight: 500;
   font-size: 12px;
+}
+
+.ai-loading {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--stat-blue);
+  border-radius: var(--radius-md);
+  background: linear-gradient(90deg, var(--gray-50), var(--gray-100));
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  padding: 16px 18px;
+}
+
+.ai-loading .loading-title {
+  margin: 0;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--gray-900);
+}
+
+.ai-loading .loading-sub {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--gray-600);
+  line-height: 1.5;
+}
+
+.spinner {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 3px solid var(--gray-200);
+  border-top-color: var(--stat-blue);
+  animation: spin 0.85s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 14px;
+}
+
+.meta-chip {
+  display: inline-flex;
+  align-items: center;
+  background: var(--color-white);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--gray-700);
+}
+
+.ai-sections {
+  display: grid;
+  gap: 12px;
+}
+
+.ai-section {
+  background: var(--color-white);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+}
+
+.ai-section.warn {
+  border-color: #fbbf24;
+  background: #fffbeb;
+}
+
+.ai-section h4 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--gray-900);
+  text-transform: uppercase;
+}
+
+.ai-section .section-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--gray-800);
+}
+
+.ai-section .section-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.ai-section .section-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--gray-800);
+}
+
+.ai-section.warn .section-list li :first-child {
+  color: #d97706;
 }
 
 .ai-output {
