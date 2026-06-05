@@ -16,9 +16,10 @@ const SPEAKERS = ['Sudya', 'Da\'vogar', 'Javobgar', 'Advokat', 'Guvoh', 'Prokuro
 
 const connected = ref(false);
 const recording = ref(false);
+const processing = ref(false);  // backend currently transcribing a clip
 const statusText = ref('Ulanmagan');
 const currentSpeaker = ref('Sudya');
-const segments = ref([]); // { ts, speaker, text, insight }
+const segments = ref([]); // { ts, idx, speaker, text, insight, silent? }
 const insights = ref([]); // { text }
 const transcriptEl = ref(null);
 
@@ -63,29 +64,36 @@ const connectWs = () =>
         return;
       }
       if (data.type === 'segment') {
+        processing.value = false;
         segments.value.push({
           ts: data.ts,
+          idx: data.idx,
           speaker: data.speaker,
           text: data.text,
-          insight: data.insight
+          insight: null
         });
-        if (data.insight) insights.value.unshift({ text: data.insight });
         scrollToBottom();
+      } else if (data.type === 'insight') {
+        // Late-arriving LLM insight — attach to its segment by idx.
+        const seg = segments.value.find((s) => s.idx === data.segment_idx);
+        if (seg) seg.insight = data.text;
+        insights.value.unshift({ text: data.text });
+      } else if (data.type === 'silent') {
+        processing.value = false;
+        segments.value.push({
+          ts: data.ts,
+          speaker: '',
+          text: '(jim — nutq aniqlanmadi)',
+          insight: null,
+          silent: true
+        });
+        scrollToBottom();
+      } else if (data.type === 'processing') {
+        processing.value = true;
       } else if (data.type === 'status') {
         statusText.value = data.message;
-        // Surface silence detection so the user knows AI isn't broken —
-        // just no speech was picked up in the last clip.
-        if (data.message && data.message.includes('jim')) {
-          segments.value.push({
-            ts: null,
-            speaker: '',
-            text: '(jim — nutq aniqlanmadi)',
-            insight: null,
-            silent: true
-          });
-          scrollToBottom();
-        }
       } else if (data.type === 'error') {
+        processing.value = false;
         ui.pushToast({ type: 'error', title: 'STT xatosi', text: data.message });
       }
     };
@@ -100,6 +108,17 @@ const connectWs = () =>
       console.warn(`[hearing] WS closed: code=${e.code}, reason='${e.reason}', wasClean=${e.wasClean}`);
       connected.value = false;
       statusText.value = 'Uzildi';
+      processing.value = false;
+      // Tarmoq uzilsa, recording'ni darhol to'xtatamiz — aks holda mikrofon
+      // havoga yozib turaveradi va foydalanuvchi vaqt yo'qotadi.
+      if (recording.value) {
+        ui.pushToast({
+          type: 'error',
+          title: 'Aloqa uzildi',
+          text: 'Server bilan ulanish yo\'qoldi. Yozib olish to\'xtatildi.'
+        });
+        stopRecording({ keepWsOpen: false });
+      }
     };
   });
 
@@ -231,18 +250,32 @@ const setSpeaker = (sp) => {
 };
 
 const saveTranscript = () => {
-  if (!segments.value.length) {
+  const usable = segments.value.filter((s) => !s.silent);
+  if (!usable.length) {
     ui.pushToast({ type: 'error', title: 'Stenogramma bo\'sh', text: 'Avval majlisni yozib oling.' });
     return;
   }
-  const text = segments.value
-    .map((s) => `[${s.ts}s] ${s.speaker}: ${s.text}`)
+  const now = new Date();
+  const dateStr = now.toLocaleString('uz-UZ');
+  const header = [
+    'SUD MAJLISI STENOGRAMMASI',
+    '────────────────────────────────────',
+    `Ish raqami: #${CASE_ID}`,
+    `Sana: ${dateStr}`,
+    `Segmentlar soni: ${usable.length}`,
+    '',
+    'STENOGRAMMA',
+    '────────────────────────────────────'
+  ].join('\n');
+  const body = usable
+    .map((s) => `[${String(s.ts).padStart(5, ' ')}s] ${s.speaker}: ${s.text}`)
     .join('\n');
+  const text = `${header}\n${body}\n`;
   const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `stenogramma-${CASE_ID}.txt`;
+  a.download = `stenogramma-${CASE_ID}-${now.toISOString().slice(0, 10)}.txt`;
   a.click();
   URL.revokeObjectURL(url);
   ui.pushToast({ type: 'success', title: 'Saqlandi', text: 'Stenogramma .txt yuklab olindi.' });
@@ -297,15 +330,31 @@ onBeforeUnmount(stopRecording);
 
         <!-- Live transcript -->
         <div ref="transcriptEl" class="transcript-box">
-          <p v-if="!segments.length" class="empty">
+          <p v-if="!segments.length && !processing" class="empty">
             "Majlisni boshlash" tugmasini bosing. Mikrofon yozib oladi, har 5 soniyada
             audio bo'lagi backend'ga yuboriladi va Whisper modeli uni o'zbekcha matnga
             aylantirib, real vaqtda bu yerga chiqaradi.
           </p>
-          <article v-for="(line, i) in segments" :key="i" class="transcript">
-            <time>{{ line.ts }}s</time>
-            <strong>{{ line.speaker }}</strong>
-            <p>{{ line.text }}</p>
+          <article
+            v-for="(line, i) in segments"
+            :key="i"
+            :class="['transcript', { silent: line.silent }]"
+          >
+            <time v-if="line.ts !== null && line.ts !== undefined">{{ line.ts }}s</time>
+            <time v-else>—</time>
+            <strong v-if="line.speaker">{{ line.speaker }}</strong>
+            <p>
+              {{ line.text }}
+              <span v-if="line.insight" class="seg-insight">{{ line.insight }}</span>
+            </p>
+          </article>
+          <article v-if="processing" class="transcript processing">
+            <time>…</time>
+            <strong>AI</strong>
+            <p>
+              <span class="dot" /><span class="dot" /><span class="dot" />
+              Transkripsiya qilinmoqda…
+            </p>
           </article>
         </div>
       </main>
@@ -429,6 +478,38 @@ h1 {
 .transcript time { color: var(--gray-500); font-size: 12px; }
 .transcript strong { font-size: 13px; }
 .transcript p { margin: 0; line-height: 1.6; }
+
+.transcript.silent {
+  opacity: 0.55;
+  font-style: italic;
+}
+.transcript.silent p { color: var(--gray-500); font-size: 13px; }
+
+.transcript.processing p { color: var(--gray-500); display: flex; gap: 6px; align-items: center; }
+.transcript.processing .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--stat-blue, #0a66f2);
+  animation: bounce 1.1s ease-in-out infinite;
+}
+.transcript.processing .dot:nth-child(2) { animation-delay: 0.15s; }
+.transcript.processing .dot:nth-child(3) { animation-delay: 0.3s; }
+@keyframes bounce {
+  0%, 80%, 100% { opacity: 0.3; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-3px); }
+}
+
+.seg-insight {
+  display: block;
+  margin-top: 6px;
+  padding: 6px 10px;
+  border-left: 2px solid var(--stat-blue, #0a66f2);
+  background: var(--gray-50, #f7f8fa);
+  border-radius: 0 6px 6px 0;
+  font-size: 12.5px;
+  color: var(--gray-700);
+}
 
 .insight {
   display: flex;
