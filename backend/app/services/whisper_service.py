@@ -73,42 +73,61 @@ def _resolve_language(language: Optional[str]) -> Optional[str]:
     return language
 
 
-def _transcribe_sync(audio_path: str, language: Optional[str]) -> dict:
-    model = _load_model()
-    resolved_lang = _resolve_language(language)
+def _run_whisper(model, audio_path: str, resolved_lang: Optional[str], use_vad: bool):
+    """One transcription pass. Returns (raw_segments_list, info).
+
+    beam_size=1 (greedy) — jonli majlis uchun tezlik kritik: 5 s klip CPU'da
+    beam_size=5 bilan ~20-30 s ketardi (real-vaqtdan orqada qolardi). Greedy
+    bilan ~4-6 s — medium model bunda ham yetarli aniq.
+    """
     segments, info = model.transcribe(
         audio_path,
         language=resolved_lang,  # None → auto-detect (uz/ru/en aralash nutq)
-        # Aniqlik ustuvor (sekin bo'lsa ham mayli): beam search + best_of.
-        beam_size=5,
-        best_of=5,
+        beam_size=1,
+        best_of=1,
         temperature=0.0,
-        # Don't carry hallucinated context between clips.
         condition_on_previous_text=False,
-        # Suppress runaway repeated tokens ('ʃʃʃʃ' noise hallucination).
         repetition_penalty=1.2,
         no_repeat_ngram_size=3,
-        # VAD trims silence/noise. min_silence=300ms is lenient enough for
-        # 5-second live clips where natural pauses are short.
-        vad_filter=True,
-        vad_parameters=dict(min_silence_duration_ms=300),
-        # Whisper's own silence/confidence filters — keep at defaults so
-        # short live clips with quieter audio aren't entirely discarded.
+        vad_filter=use_vad,
+        vad_parameters=dict(min_silence_duration_ms=500) if use_vad else None,
         no_speech_threshold=0.6,
         log_prob_threshold=-1.0,
     )
+    # Materialize the generator so we can count raw segments.
+    return list(segments), info
+
+
+def _transcribe_sync(audio_path: str, language: Optional[str]) -> dict:
+    model = _load_model()
+    resolved_lang = _resolve_language(language)
+
+    # First pass WITH VAD (trims silence/noise). If it kills everything —
+    # which happens on quiet mics or short webm/opus clips — retry WITHOUT
+    # VAD so genuine speech isn't silently dropped.
+    raw, info = _run_whisper(model, audio_path, resolved_lang, use_vad=True)
+    if not raw:
+        logger.info("Whisper: VAD produced 0 segments → retrying without VAD")
+        raw, info = _run_whisper(model, audio_path, resolved_lang, use_vad=False)
+
+    logger.info(
+        f"Whisper: {len(raw)} raw segments "
+        f"(lang={info.language}, lang_prob={getattr(info, 'language_probability', 0):.2f}, "
+        f"dur={info.duration:.2f}s)"
+    )
+
     seg_list = []
     full_text = []
     dropped = []
-    for seg in segments:
+    for seg in raw:
         no_speech = getattr(seg, "no_speech_prob", 0.0)
         avg_lp = getattr(seg, "avg_logprob", 0.0)
         clean = seg.text.strip()
         # Soft post-filters — log everything we drop so we can tune.
-        if no_speech > 0.85:
+        if no_speech > 0.9:
             dropped.append(f"no_speech={no_speech:.2f} '{clean[:30]}'")
             continue
-        if avg_lp < -1.2:
+        if avg_lp < -1.5:
             dropped.append(f"low_logprob={avg_lp:.2f} '{clean[:30]}'")
             continue
         if not clean:
@@ -121,11 +140,11 @@ def _transcribe_sync(audio_path: str, language: Optional[str]) -> dict:
         )
         full_text.append(clean)
     if dropped:
-        logger.info(f"Whisper dropped {len(dropped)} segments: {dropped[:3]}")
+        logger.info(f"Whisper dropped {len(dropped)}/{len(raw)} segments: {dropped[:3]}")
     if not seg_list:
         logger.warning(
             f"Whisper: no segments survived filtering "
-            f"(lang={info.language}, dur={info.duration:.2f}s)"
+            f"(raw={len(raw)}, lang={info.language}, dur={info.duration:.2f}s)"
         )
     return {
         "language": info.language,
