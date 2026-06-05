@@ -56,8 +56,15 @@ const storageKey = computed(() => `smartcourt-page:${route.path}`);
 
 const loadForm = () => {
   const saved = JSON.parse(window.localStorage.getItem(storageKey.value) || '{}');
-  formValues.value = Object.fromEntries(fields.value.map((f) => [f.key, saved[f.key] ?? '']));
+  formValues.value = Object.fromEntries(
+    fields.value.map((f) => [f.key, f.type === 'file' ? null : saved[f.key] ?? ''])
+  );
   apiResult.value = null;
+};
+
+const onFileChange = (key, event) => {
+  const f = event.target.files?.[0] || null;
+  formValues.value = { ...formValues.value, [key]: f };
 };
 
 const loadLive = async () => {
@@ -85,11 +92,16 @@ watch(
 const tableData = computed(() => liveTable.value || page.value.table || null);
 
 const saveForm = () => {
-  window.localStorage.setItem(storageKey.value, JSON.stringify(formValues.value));
+  const serializable = Object.fromEntries(
+    Object.entries(formValues.value).filter(([, v]) => !(v instanceof File))
+  );
+  window.localStorage.setItem(storageKey.value, JSON.stringify(serializable));
 };
 
 const resetForm = () => {
-  formValues.value = Object.fromEntries(fields.value.map((f) => [f.key, '']));
+  formValues.value = Object.fromEntries(
+    fields.value.map((f) => [f.key, f.type === 'file' ? null : ''])
+  );
   apiResult.value = null;
   window.localStorage.removeItem(storageKey.value);
   ui.pushToast({ type: 'info', title: 'Tozalandi', text: 'Kiritilgan qiymatlar tozalandi.' });
@@ -172,6 +184,17 @@ const runAction = async (label) => {
                 <label v-if="field.type === 'textarea'" class="full textarea-field">
                   <span>{{ field.label }}</span>
                   <textarea v-model="formValues[field.key]" rows="5" :placeholder="field.label" />
+                </label>
+                <label v-else-if="field.type === 'file'" class="full file-field">
+                  <span>{{ field.label }}</span>
+                  <input
+                    type="file"
+                    :accept="field.accept"
+                    @change="onFileChange(field.key, $event)"
+                  />
+                  <span v-if="formValues[field.key]?.name" class="file-name">
+                    <FileText :size="14" /> {{ formValues[field.key].name }}
+                  </span>
                 </label>
                 <BaseInput
                   v-else
@@ -390,6 +413,39 @@ h1 {
   font-family: inherit;
   font-size: 13px;
   line-height: 1.6;
+}
+
+.file-field {
+  display: grid;
+  gap: 8px;
+  color: var(--gray-700);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.file-field input[type='file'] {
+  border: 1px dashed var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  color: var(--gray-700);
+  padding: 12px;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.file-field input[type='file']:hover {
+  border-color: var(--gray-500);
+  background: var(--gray-50);
+}
+
+.file-field .file-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--gray-600);
+  font-weight: 500;
+  font-size: 12px;
 }
 
 .ai-output {

@@ -15,7 +15,8 @@ import {
   aiSentencAi,
   ensureAuth,
   searchLaws,
-  searchPrecedents
+  searchPrecedents,
+  uploadDocument
 } from '@/lib/api';
 
 // ── Live data loaders (tables) ──────────────────────────────
@@ -123,9 +124,27 @@ export const RUNNERS = {
     }
   },
   '/judge/ai-tools/evidence-analyzer': {
-    fields: [{ key: 'text', label: 'Dalil/hujjat matni', type: 'textarea' }],
+    fields: [
+      {
+        key: 'file',
+        label: 'Dalil fayli (PDF, DOCX, JPG, PNG, MP3, MP4)',
+        type: 'file',
+        accept: '.pdf,.docx,.doc,.txt,.jpg,.jpeg,.png,.gif,.mp3,.wav,.mp4,.mov'
+      },
+      { key: 'text', label: 'Yoki matn ko‘rinishida kiriting', type: 'textarea' }
+    ],
     run: async (v) => {
       await ensureAuth('judge');
+      if (v.file instanceof File) {
+        const r = await uploadDocument(v.file, { analyze: true });
+        const lines = [
+          `Fayl: ${r.filename} (${Math.round((r.size_bytes || 0) / 1024)} KB)`,
+          `Turi: ${r.kind}`,
+          `Matn ajratildi: ${r.text_extracted ? 'ha' : 'yo‘q'}`,
+          ...flatten(r.ai_analysis || {})
+        ];
+        return { title: 'EvidenceAnalyzer natijasi', lines, raw: r };
+      }
       const r = await aiEvidenceText(v.text || '');
       return { title: 'EvidenceAnalyzer natijasi', lines: flatten(r), raw: r };
     }
