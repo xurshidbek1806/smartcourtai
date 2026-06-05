@@ -55,8 +55,10 @@ class Settings(BaseSettings):
     NEO4J_USER: str = "neo4j"
     NEO4J_PASSWORD: str = "smartcourt_graph"
 
-    # Whisper
-    WHISPER_MODEL: str = "small"
+    # Whisper. 'base' is the only model that keeps up with live 5-second
+    # clips on a CPU (~2 s/clip); 'small'/'medium' run 13-60 s/clip here and
+    # the queue collapses. Bump to 'medium' only on a GPU or strong CPU.
+    WHISPER_MODEL: str = "base"
     WHISPER_DEVICE: str = "cpu"
     WHISPER_COMPUTE_TYPE: str = "int8"
     WHISPER_LANGUAGE: str = "uz"
