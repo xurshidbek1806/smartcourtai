@@ -4,6 +4,7 @@ import {
   Building2,
   Calendar,
   Check,
+  FileDown,
   FileText,
   Home,
   Landmark,
@@ -24,6 +25,15 @@ import BaseInput from '@/components/ui/BaseInput.vue';
 import { portalNav } from '@/data/navigation';
 import { useUi } from '@/stores/ui';
 import { createClaim, ensureAuth, submitClaim, uploadDocument, validateClaim } from '@/lib/api';
+import {
+  buildClaimDocument,
+  buildClaimMetadata,
+  downloadBlob,
+  getClaimTemplateByDispute,
+  legalReferences,
+  slugifyDocumentName,
+  toWordHtml
+} from '@/data/legalTemplates';
 
 const ui = useUi();
 const router = useRouter();
@@ -33,10 +43,14 @@ const submitting = ref(false);
 const form = reactive({
   selectedType: 'Mehnat nizosi',
   partyType: 'Jismoniy shaxs',
-  fullName: '',
-  pinfl: '',
-  address: '',
-  phone: '',
+  claimantName: '',
+  claimantPinfl: '',
+  claimantAddress: '',
+  claimantPhone: '',
+  respondentName: '',
+  respondentPinfl: '',
+  respondentAddress: '',
+  respondentPhone: '',
   title: '',
   description: '',
   amount: '',
@@ -70,19 +84,38 @@ const disputeTypes = [
 const steps = ['Nizo turi', 'Tomonlar', 'Tafsilotlar', 'Dalillar', 'Yuborish'];
 
 const progress = computed(() => `${(step.value / 5) * 100}%`);
+const currentTemplate = computed(() => getClaimTemplateByDispute(form.selectedType));
 const next = () => (step.value = Math.min(5, step.value + 1));
 const prev = () => (step.value = Math.max(1, step.value - 1));
 
 const saveDraft = () => {
   window.localStorage.setItem(
     'smartcourt-claim-draft',
-    JSON.stringify({ step: step.value, form })
+    JSON.stringify({
+      step: step.value,
+      form: { ...form },
+      templateId: currentTemplate.value.id,
+      uploadedFiles: uploadedFiles.value.map(({ id, name, size, result }) => ({
+        id,
+        name,
+        size,
+        result
+      }))
+    })
   );
-  ui.pushToast({ type: 'success', title: 'Qoralama saqlandi', text: 'Ariza qoralamasi lokal saqlandi.' });
+  ui.pushToast({
+    type: 'success',
+    title: 'Qoralama saqlandi',
+    text: 'Ariza qoralamasi lokal saqlandi.'
+  });
 };
 
 const addParty = () => {
-  ui.pushToast({ type: 'info', title: 'Tomon', text: 'Bu demoda bitta javobgar qo\'llab-quvvatlanadi.' });
+  ui.pushToast({
+    type: 'info',
+    title: 'Tomon',
+    text: "Bu demoda bitta javobgar qo'llab-quvvatlanadi."
+  });
 };
 
 const tryMediation = () => {
@@ -116,6 +149,43 @@ const removeFile = (id) => {
   uploadedFiles.value = uploadedFiles.value.filter((file) => file.id !== id);
 };
 
+const buildClaimExportPayload = () => ({
+  form,
+  uploadedFiles: uploadedFiles.value,
+  validation: validation.data
+});
+
+const exportClaimDoc = () => {
+  const payload = buildClaimExportPayload();
+  const documentText = buildClaimDocument(payload);
+  const slug = slugifyDocumentName(form.title || form.selectedType, 'davo-arizasi');
+  downloadBlob(
+    `${slug}-${Date.now()}.doc`,
+    toWordHtml(currentTemplate.value.name, documentText, currentTemplate.value),
+    'application/msword;charset=utf-8'
+  );
+  ui.pushToast({
+    type: 'success',
+    title: 'Ariza shabloni tayyor',
+    text: `${currentTemplate.value.name} Word-compatible .doc formatida yuklandi.`
+  });
+};
+
+const exportClaimJson = () => {
+  const metadata = buildClaimMetadata(buildClaimExportPayload());
+  const slug = slugifyDocumentName(form.title || form.selectedType, 'davo-arizasi');
+  downloadBlob(
+    `${slug}-${Date.now()}.json`,
+    JSON.stringify(metadata, null, 2),
+    'application/json;charset=utf-8'
+  );
+  ui.pushToast({
+    type: 'success',
+    title: 'Metadata tayyor',
+    text: 'Backendga yuboriladigan JSON paketi yuklandi.'
+  });
+};
+
 /**
  * Build the free-text claim from the wizard state and send it to the
  * backend ClaimValidator. The AI returns structured JSON with the dispute
@@ -125,8 +195,10 @@ const runClaimValidator = async () => {
   const textParts = [
     `Nizo turi: ${form.selectedType}`,
     form.title && `Sarlavha: ${form.title}`,
-    form.fullName && `Javobgar: ${form.fullName}`,
-    form.address && `Manzil: ${form.address}`,
+    form.claimantName && `Da’vogar: ${form.claimantName}`,
+    form.claimantAddress && `Da’vogar manzili: ${form.claimantAddress}`,
+    form.respondentName && `Javobgar: ${form.respondentName}`,
+    form.respondentAddress && `Javobgar manzili: ${form.respondentAddress}`,
     form.amount && `Nizo summasi: ${form.amount}`,
     form.eventDate && `Voqea sanasi: ${form.eventDate}`,
     form.description && `\nMohiyati: ${form.description}`
@@ -160,7 +232,6 @@ const runClaimValidator = async () => {
       title: 'AI tahlil xatosi',
       text: 'Backend bilan bog‘lanib bo‘lmadi. Konsolga qarang.'
     });
-    // eslint-disable-next-line no-console
     console.error('ClaimValidator error:', e);
   } finally {
     validation.loading = false;
@@ -175,7 +246,11 @@ const parseAmount = (raw) => {
 const submitClaimFlow = async () => {
   if (submitting.value) return;
   if (!form.title.trim()) {
-    ui.pushToast({ type: 'error', title: 'Sarlavha kerak', text: '3-bosqichda ariza sarlavhasini kiriting.' });
+    ui.pushToast({
+      type: 'error',
+      title: 'Sarlavha kerak',
+      text: '3-bosqichda ariza sarlavhasini kiriting.'
+    });
     step.value = 3;
     return;
   }
@@ -188,8 +263,15 @@ const submitClaimFlow = async () => {
       description: form.description,
       amount: parseAmount(form.amount),
       currency: 'UZS',
-      location: form.address || null,
-      respondents: form.fullName ? { name: form.fullName, pinfl: form.pinfl, phone: form.phone } : null
+      location: form.claimantAddress || form.respondentAddress || null,
+      respondents: form.respondentName
+        ? {
+            name: form.respondentName,
+            pinfl: form.respondentPinfl,
+            phone: form.respondentPhone,
+            address: form.respondentAddress
+          }
+        : null
     };
     const claim = await createClaim(payload);
 
@@ -212,7 +294,11 @@ const submitClaimFlow = async () => {
     });
     router.push(`/portal/claims/${claim.id}`);
   } catch (e) {
-    ui.pushToast({ type: 'error', title: 'Yuborish xatosi', text: e.message || 'Backend bilan bog\'lanib bo\'lmadi.' });
+    ui.pushToast({
+      type: 'error',
+      title: 'Yuborish xatosi',
+      text: e.message || "Backend bilan bog'lanib bo'lmadi."
+    });
   } finally {
     submitting.value = false;
   }
@@ -266,6 +352,11 @@ const handleNext = () => {
           </BaseCard>
           <template v-if="step === 1">
             <h2>1. Nizo turini tanlang</h2>
+            <BaseCard variant="filled" class="template-card">
+              <p class="eyebrow">Tanlangan huquqiy shablon</p>
+              <h3>{{ currentTemplate.name }}</h3>
+              <p>{{ currentTemplate.format }} • {{ currentTemplate.basis.join(', ') }}</p>
+            </BaseCard>
             <div class="grid grid-2 choice-grid">
               <BaseCard
                 v-for="type in disputeTypes"
@@ -300,13 +391,45 @@ const handleNext = () => {
             </div>
             <div class="grid grid-2 form-grid">
               <BaseInput
-                v-model="form.fullName"
-                label="F.I.Sh / tashkilot"
-                placeholder="Akramov Dilshod"
+                v-model="form.claimantName"
+                label="Da’vogar F.I.Sh / tashkilot"
+                placeholder="Karimov Akmal"
               />
-              <BaseInput v-model="form.pinfl" label="PINFL / INN" placeholder="12345678901234" />
-              <BaseInput v-model="form.address" label="Manzil" placeholder="Toshkent, Yunusobod" />
-              <BaseInput v-model="form.phone" label="Telefon" placeholder="+998 90 000 00 00" />
+              <BaseInput
+                v-model="form.claimantPinfl"
+                label="Da’vogar PINFL / INN"
+                placeholder="12345678901234"
+              />
+              <BaseInput
+                v-model="form.claimantAddress"
+                label="Da’vogar manzili"
+                placeholder="Toshkent, Yunusobod"
+              />
+              <BaseInput
+                v-model="form.claimantPhone"
+                label="Da’vogar telefon / email"
+                placeholder="+998 90 000 00 00"
+              />
+              <BaseInput
+                v-model="form.respondentName"
+                label="Javobgar F.I.Sh / tashkilot"
+                placeholder="Alfa MChJ"
+              />
+              <BaseInput
+                v-model="form.respondentPinfl"
+                label="Javobgar PINFL / INN"
+                placeholder="987654321"
+              />
+              <BaseInput
+                v-model="form.respondentAddress"
+                label="Javobgar manzili"
+                placeholder="Toshkent, Chilonzor"
+              />
+              <BaseInput
+                v-model="form.respondentPhone"
+                label="Javobgar telefon / email"
+                placeholder="+998 71 000 00 00"
+              />
             </div>
             <BaseButton variant="secondary" :icon="Plus" @click="addParty"
               >Yana tomon qo‘shish</BaseButton
@@ -323,18 +446,10 @@ const handleNext = () => {
               />
               <label class="textarea">
                 <span>Nizo mohiyati</span>
-                <textarea
-                  v-model="form.description"
-                  rows="7"
-                  placeholder="Kamida 200 belgi..."
-                />
+                <textarea v-model="form.description" rows="7" placeholder="Kamida 200 belgi..." />
               </label>
               <div class="grid grid-2">
-                <BaseInput
-                  v-model="form.amount"
-                  label="Nizo summasi"
-                  placeholder="50 000 000"
-                />
+                <BaseInput v-model="form.amount" label="Nizo summasi" placeholder="50 000 000" />
                 <BaseInput
                   v-model="form.eventDate"
                   label="Voqea sanasi"
@@ -343,7 +458,11 @@ const handleNext = () => {
                 />
               </div>
               <BaseButton :icon="Sparkles" :loading="validation.loading" @click="runClaimValidator">
-                {{ validation.loading ? 'AI tahlil qilmoqda...' : 'AI bilan tekshirish (ClaimValidator)' }}
+                {{
+                  validation.loading
+                    ? 'AI tahlil qilmoqda...'
+                    : 'AI bilan tekshirish (ClaimValidator)'
+                }}
               </BaseButton>
 
               <BaseCard v-if="validation.data" variant="filled" class="ai-result">
@@ -358,9 +477,14 @@ const handleNext = () => {
                   <span>Yurisdiksiya</span>
                   <strong>{{ validation.data.jurisdiction }}</strong>
                 </div>
-                <div v-if="validation.data.amount !== undefined && validation.data.amount !== null" class="ai-row">
+                <div
+                  v-if="validation.data.amount !== undefined && validation.data.amount !== null"
+                  class="ai-row"
+                >
                   <span>Summa</span>
-                  <strong>{{ validation.data.amount }} {{ validation.data.currency || 'UZS' }}</strong>
+                  <strong
+                    >{{ validation.data.amount }} {{ validation.data.currency || 'UZS' }}</strong
+                  >
                 </div>
 
                 <div v-if="validation.data.relevant_articles?.length" class="ai-block">
@@ -441,6 +565,27 @@ const handleNext = () => {
 
           <template v-else>
             <h2>5. Ko‘rib chiqish va yuborish</h2>
+            <BaseCard variant="filled" class="template-card">
+              <p class="eyebrow">Yuklanadigan ariza paketi</p>
+              <h3>{{ currentTemplate.name }}</h3>
+              <p>
+                Foydalanuvchi uchun .doc ko‘rinishida, backend uchun JSON metadata. Yakuniy
+                topshirish bosqichida PDF/PDF-A va ERI backendda shakllantiriladi.
+              </p>
+              <div class="template-list">
+                <span v-for="field in currentTemplate.requiredFields" :key="field">{{
+                  field
+                }}</span>
+              </div>
+              <div class="toolbar">
+                <BaseButton variant="secondary" :icon="FileDown" @click="exportClaimDoc">
+                  Ariza .doc yuklash
+                </BaseButton>
+                <BaseButton variant="secondary" :icon="FileText" @click="exportClaimJson">
+                  JSON paketi
+                </BaseButton>
+              </div>
+            </BaseCard>
             <BaseCard variant="filled">
               <h3>MediatoBot tavsiyasi</h3>
               <p>
@@ -469,21 +614,33 @@ const handleNext = () => {
           <h2>LexPredictor</h2>
           <p class="muted">
             <template v-if="validation.data?.is_complete === false">
-              Arizada {{ validation.data?.missing_fields?.length || 0 }} ta kamchilik bor.
-              Davom etishdan oldin to'ldiring.
+              Arizada {{ validation.data?.missing_fields?.length || 0 }} ta kamchilik bor. Davom
+              etishdan oldin to'ldiring.
             </template>
             <template v-else-if="validation.data">
               AI tahlil tugatildi. Pastdagi tavsiyalarni ko'rib chiqing.
             </template>
-            <template v-else>
-              Step 3 da arizani to'ldiring va AI tahliliga yuboring.
-            </template>
+            <template v-else> Step 3 da arizani to'ldiring va AI tahliliga yuboring. </template>
           </p>
           <strong class="metric">{{ validation.data ? '✓' : '—' }}</strong>
           <p>{{ validation.data ? 'AI tahlil bajarildi' : 'AI tahlil kutilmoqda' }}</p>
           <div class="ai-status">
             <Loader2 v-if="validation.loading" :size="14" class="spin" />
             <span v-if="validation.loading">Llama 3.2:3b ishlamoqda...</span>
+          </div>
+          <div class="legal-box">
+            <p class="eyebrow">Huquqiy asos</p>
+            <strong>{{ currentTemplate.name }}</strong>
+            <p>{{ currentTemplate.basis.join(', ') }}</p>
+            <a
+              v-for="reference in legalReferences"
+              :key="reference.code"
+              :href="reference.url"
+              target="_blank"
+              rel="noreferrer"
+            >
+              {{ reference.code }}
+            </a>
           </div>
         </aside>
       </div>
@@ -580,6 +737,37 @@ h2 {
 
 .validator-summary h3 {
   margin: 4px 0 0;
+}
+
+.template-card {
+  margin: 16px 0;
+}
+
+.template-card h3 {
+  margin: 4px 0 8px;
+}
+
+.template-card p {
+  margin: 0;
+  color: var(--gray-500);
+  line-height: 1.5;
+}
+
+.template-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.template-list span {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  background: var(--color-white);
+  padding: 7px 10px;
+  color: var(--gray-700);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .selected {
@@ -754,6 +942,31 @@ textarea {
   margin-top: 12px;
   color: var(--gray-500);
   font-size: 12px;
+}
+
+.legal-box {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 16px;
+  font-size: 12px;
+}
+
+.legal-box strong {
+  color: var(--gray-900);
+}
+
+.legal-box p {
+  margin: 0;
+  color: var(--gray-500);
+  line-height: 1.5;
+}
+
+.legal-box a {
+  color: var(--stat-blue);
+  font-weight: 700;
+  text-decoration: none;
 }
 
 .spin {

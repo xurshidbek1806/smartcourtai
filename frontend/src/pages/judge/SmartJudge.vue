@@ -1,26 +1,34 @@
 <script setup>
 import { computed, onBeforeUnmount, reactive, ref } from 'vue';
-import { FileDown, Loader2, RefreshCcw, StopCircle, WandSparkles } from 'lucide-vue-next';
+import { FileDown, FileText, Loader2, RefreshCcw, StopCircle, WandSparkles } from 'lucide-vue-next';
 
 import RoleShell from '@/layouts/RoleShell.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseCard from '@/components/ui/BaseCard.vue';
 import BaseInput from '@/components/ui/BaseInput.vue';
 import { judgeNav } from '@/data/navigation';
-import { getDemoCase, updateDemoCase } from '@/services/demoCase';
 import { useUi } from '@/stores/ui';
 import { streamSmartJudge } from '@/lib/api';
+import {
+  buildDecisionDocument,
+  buildDecisionMetadata,
+  decisionTemplate,
+  downloadBlob,
+  legalReferences,
+  slugifyDocumentName,
+  toWordHtml
+} from '@/data/legalTemplates';
 
 const ui = useUi();
 
 const form = reactive({
-  title: 'Ishga tiklash va ish haqi undirish to\'g\'risida',
+  title: "Ishga tiklash va ish haqi undirish to'g'risida",
   disputeType: 'labor',
-  parties: 'Da\'vogar: A. Karimov; Javobgar: \'Alfa\' MChJ',
+  parties: "Da'vogar: A. Karimov; Javobgar: 'Alfa' MChJ",
   facts:
     'Xodim shtat qisqartirilishi bahonasida noqonuniy ishdan boshatilgan. Shtat aslida ' +
-    'qisqartirilmagan, o\'rniga boshqa odam olingan. 3 oylik ish haqi ham to\'lanmagan, ' +
-    'jami 9 000 000 so\'m.'
+    "qisqartirilmagan, o'rniga boshqa odam olingan. 3 oylik ish haqi ham to'lanmagan, " +
+    "jami 9 000 000 so'm."
 });
 
 const draft = ref('');
@@ -36,9 +44,7 @@ const sources = reactive({
 let controller = null;
 let timer = null;
 
-const wordCount = computed(() =>
-  draft.value.trim() ? draft.value.trim().split(/\s+/).length : 0
-);
+const wordCount = computed(() => (draft.value.trim() ? draft.value.trim().split(/\s+/).length : 0));
 
 const startTimer = () => {
   const t0 = Date.now();
@@ -58,7 +64,7 @@ const generateDraft = () => {
   if (!form.facts.trim()) {
     ui.pushToast({
       type: 'error',
-      title: 'Ish holatlari bo\'sh',
+      title: "Ish holatlari bo'sh",
       text: 'Avval ish holatlarini kiriting.'
     });
     return;
@@ -88,7 +94,8 @@ const generateDraft = () => {
         case 'token':
           draft.value += event.content;
           tokenCount.value += 1;
-          if (tokenCount.value % 10 === 0) console.log(`[stream] ${tokenCount.value} tokens, ${draft.value.length} chars`);
+          if (tokenCount.value % 10 === 0)
+            console.log(`[stream] ${tokenCount.value} tokens, ${draft.value.length} chars`);
           break;
         case 'done':
           streaming.value = false;
@@ -105,7 +112,7 @@ const generateDraft = () => {
           ui.pushToast({
             type: 'error',
             title: 'Streaming xatosi',
-            text: event.message || 'Backend bilan bog\'lanib bo\'lmadi.'
+            text: event.message || "Backend bilan bog'lanib bo'lmadi."
           });
           break;
       }
@@ -119,31 +126,60 @@ const stopStream = () => {
   stopTimer();
   ui.pushToast({
     type: 'success',
-    title: 'To\'xtatildi',
+    title: "To'xtatildi",
     text: 'Generatsiya foydalanuvchi tomonidan bekor qilindi.'
   });
 };
 
-const exportDraft = () => {
+const buildDecisionPayload = () => ({
+  form,
+  draft: draft.value,
+  laws: sources.laws,
+  precedents: sources.precedents
+});
+
+const exportDecisionDoc = () => {
   if (!draft.value.trim()) {
     ui.pushToast({
       type: 'error',
-      title: 'Qoralama bo\'sh',
+      title: "Qoralama bo'sh",
       text: 'Avval qoralama yarating.'
     });
     return;
   }
-  const blob = new Blob([draft.value], { type: 'text/plain;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `qaror-qoralamasi-${Date.now()}.txt`;
-  a.click();
-  URL.revokeObjectURL(url);
+  const documentText = buildDecisionDocument(buildDecisionPayload());
+  const slug = slugifyDocumentName(form.title, 'qaror-qoralamasi');
+  downloadBlob(
+    `${slug}-${Date.now()}.doc`,
+    toWordHtml(decisionTemplate.name, documentText, decisionTemplate),
+    'application/msword;charset=utf-8'
+  );
   ui.pushToast({
     type: 'success',
     title: 'Eksport tayyor',
-    text: 'Qaror qoralamasi yuklab olindi.'
+    text: 'Qaror qoralamasi FPK 253 tuzilmasida .doc formatida yuklandi.'
+  });
+};
+
+const exportDecisionJson = () => {
+  if (!draft.value.trim()) {
+    ui.pushToast({
+      type: 'error',
+      title: 'Qoralama bo‘sh',
+      text: 'Avval qoralama yarating.'
+    });
+    return;
+  }
+  const slug = slugifyDocumentName(form.title, 'qaror-qoralamasi');
+  downloadBlob(
+    `${slug}-${Date.now()}.json`,
+    JSON.stringify(buildDecisionMetadata(buildDecisionPayload()), null, 2),
+    'application/json;charset=utf-8'
+  );
+  ui.pushToast({
+    type: 'success',
+    title: 'Metadata tayyor',
+    text: 'Sudya exporti uchun JSON paketi yuklandi.'
   });
 };
 
@@ -163,19 +199,10 @@ onBeforeUnmount(() => {
             <h1>Qaror qoralamasi</h1>
           </div>
           <div class="header-actions">
-            <BaseButton
-              v-if="!streaming"
-              :icon="WandSparkles"
-              @click="generateDraft"
-            >
+            <BaseButton v-if="!streaming" :icon="WandSparkles" @click="generateDraft">
               Qoralama yaratish
             </BaseButton>
-            <BaseButton
-              v-else
-              variant="secondary"
-              :icon="StopCircle"
-              @click="stopStream"
-            >
+            <BaseButton v-else variant="secondary" :icon="StopCircle" @click="stopStream">
               To'xtatish
             </BaseButton>
           </div>
@@ -185,7 +212,11 @@ onBeforeUnmount(() => {
         <div class="case-form">
           <BaseInput v-model="form.title" label="Ish nomi" placeholder="Ish nomi" />
           <div class="grid grid-2">
-            <BaseInput v-model="form.disputeType" label="Nizo turi" placeholder="labor, civil, criminal..." />
+            <BaseInput
+              v-model="form.disputeType"
+              label="Nizo turi"
+              placeholder="labor, civil, criminal..."
+            />
             <BaseInput v-model="form.parties" label="Tomonlar" placeholder="Da'vogar / javobgar" />
           </div>
           <label class="textarea">
@@ -196,9 +227,15 @@ onBeforeUnmount(() => {
 
         <!-- Streaming stats -->
         <div v-if="streaming || draft" class="stats">
-          <span><strong>{{ tokenCount }}</strong> token</span>
-          <span><strong>{{ wordCount }}</strong> so'z</span>
-          <span><strong>{{ elapsedSeconds }}</strong> s</span>
+          <span
+            ><strong>{{ tokenCount }}</strong> token</span
+          >
+          <span
+            ><strong>{{ wordCount }}</strong> so'z</span
+          >
+          <span
+            ><strong>{{ elapsedSeconds }}</strong> s</span
+          >
           <span v-if="streaming" class="live">
             <Loader2 :size="14" class="spin" /> Lokal LLM generatsiya qilmoqda...
           </span>
@@ -211,23 +248,46 @@ onBeforeUnmount(() => {
         </div>
         <div v-else class="editor">
           <p class="empty">
-            Yuqorida ish holatlarini to'ldiring va "Qoralama yaratish" tugmasini bosing.
-            Llama 3.2:3b modeli RAG orqali tegishli qonun moddalarini topib, real vaqtda
-            sud qarori qoralamasini token-by-token generatsiya qiladi.
+            Yuqorida ish holatlarini to'ldiring va "Qoralama yaratish" tugmasini bosing. Llama
+            3.2:3b modeli RAG orqali tegishli qonun moddalarini topib, real vaqtda sud qarori
+            qoralamasini token-by-token generatsiya qiladi.
           </p>
         </div>
 
         <div class="toolbar">
-          <BaseButton variant="secondary" :icon="RefreshCcw" :disabled="streaming" @click="generateDraft">
+          <BaseButton
+            variant="secondary"
+            :icon="RefreshCcw"
+            :disabled="streaming"
+            @click="generateDraft"
+          >
             Qayta yaratish
           </BaseButton>
-          <BaseButton :icon="FileDown" :disabled="streaming || !draft" @click="exportDraft">
-            Eksport .txt
+          <BaseButton :icon="FileDown" :disabled="streaming || !draft" @click="exportDecisionDoc">
+            Qaror .doc
+          </BaseButton>
+          <BaseButton
+            variant="secondary"
+            :icon="FileText"
+            :disabled="streaming || !draft"
+            @click="exportDecisionJson"
+          >
+            JSON paketi
           </BaseButton>
         </div>
       </main>
 
       <aside class="grid right-rail">
+        <BaseCard>
+          <h2>Qaror shabloni</h2>
+          <p class="muted">
+            {{ decisionTemplate.name }}: kirish, bayon, asoslantiruvchi va xulosa qismlari. Yakuniy
+            PDF/PDF-A va ERI backendda shakllantiriladi.
+          </p>
+          <div class="template-list">
+            <span v-for="section in decisionTemplate.sections" :key="section">{{ section }}</span>
+          </div>
+        </BaseCard>
         <BaseCard>
           <h2>Foydalanilgan moddalar</h2>
           <p v-if="!sources.laws.length" class="muted">
@@ -241,12 +301,21 @@ onBeforeUnmount(() => {
         <BaseCard>
           <h2>O'xshash pretsedentlar</h2>
           <p v-if="!sources.precedents.length" class="muted">
-            Qoralama yaratilgach, Qdrant vector qidiruvi natijasida o'xshash pretsedentlar
-            shu yerda ko'rinadi.
+            Qoralama yaratilgach, Qdrant vector qidiruvi natijasida o'xshash pretsedentlar shu yerda
+            ko'rinadi.
           </p>
           <div v-for="(p, i) in sources.precedents" :key="i" class="source-item">
             <strong>{{ p.reference }}</strong>
-            <p>{{ p.outcome }}<span v-if="p.score"> · {{ Math.round(p.score * 100) }}% mos</span></p>
+            <p>
+              {{ p.outcome }}<span v-if="p.score"> · {{ Math.round(p.score * 100) }}% mos</span>
+            </p>
+          </div>
+        </BaseCard>
+        <BaseCard>
+          <h2>Huquqiy asos</h2>
+          <div v-for="reference in legalReferences" :key="reference.code" class="source-item">
+            <strong>{{ reference.code }}</strong>
+            <p>{{ reference.title }}</p>
           </div>
         </BaseCard>
         <RouterLink to="/oversight/auto-exec">
@@ -385,6 +454,23 @@ h1 {
   flex-wrap: wrap;
   gap: 10px;
   margin-top: 18px;
+}
+
+.template-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.template-list span {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  background: var(--gray-100);
+  padding: 7px 10px;
+  color: var(--gray-700);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .right-rail {
