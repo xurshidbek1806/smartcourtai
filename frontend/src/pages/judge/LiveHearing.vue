@@ -73,6 +73,18 @@ const connectWs = () =>
         scrollToBottom();
       } else if (data.type === 'status') {
         statusText.value = data.message;
+        // Surface silence detection so the user knows AI isn't broken —
+        // just no speech was picked up in the last clip.
+        if (data.message && data.message.includes('jim')) {
+          segments.value.push({
+            ts: null,
+            speaker: '',
+            text: '(jim — nutq aniqlanmadi)',
+            insight: null,
+            silent: true
+          });
+          scrollToBottom();
+        }
       } else if (data.type === 'error') {
         ui.pushToast({ type: 'error', title: 'STT xatosi', text: data.message });
       }
@@ -109,8 +121,11 @@ const startRecording = async () => {
     mediaStream = await navigator.mediaDevices.getUserMedia({
       audio: {
         echoCancellation: true,
-        noiseSuppression: true, // fon shovqinini ('ʃʃʃ') olib tashlaydi
-        autoGainControl: true, // ovozni avtomatik kuchaytiradi
+        // Chrome'ning agressiv noiseSuppression past SNR'da nutqni ham
+        // o'chirib yuboradi va Whisperga jim audio yetib boradi. Whisper
+        // o'zining VAD'i bilan filtrlaymiz.
+        noiseSuppression: false,
+        autoGainControl: true,
         channelCount: 1,
         sampleRate: 48000
       }
