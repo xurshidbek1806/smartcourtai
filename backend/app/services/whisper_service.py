@@ -32,26 +32,24 @@ def _load_model():
 
 
 def _is_garbage(text: str) -> bool:
-    """Detect Whisper hallucinations on noise (e.g. 'ʃʃʃʃ', 'ᗈᗆᗆ', 'ha ha ha').
+    """Detect Whisper hallucinations on noise (e.g. 'ʃʃʃʃ', 'ᗈᗆᗆ').
 
     These appear when the mic captures broadband noise instead of clear speech.
-    Heuristics: extremely low character diversity, or one char/word dominating.
-    Tuned for short live-hearing clips — must not reject real Uzbek words.
+    Heuristics: extremely low character diversity in long output, or
+    foreign-script dominance. MUST NOT reject real Uzbek words or sequences
+    of digits ('1, 2, 3, 4, 5' is valid speech, not garbage).
     """
     t = text.strip().lower()
     if len(t) < 2:
         return True
+    # Mostly digits/punctuation? Treat as real (numbers, dates, amounts).
     letters = [c for c in t if c.isalpha()]
-    if not letters:
-        return True
+    if len(letters) < 3:
+        return False
     unique_ratio = len(set(letters)) / len(letters)
     # Real speech has many distinct letters; 'ʃʃʃ' has ratio ~0.01.
-    # Threshold lowered (0.18 → 0.10) to avoid killing short Uzbek phrases.
-    if len(letters) >= 12 and unique_ratio < 0.10:
-        return True
-    # One word repeated over and over (e.g. "ha ha ha ha ha ha ha").
-    words = t.split()
-    if len(words) >= 8 and len(set(words)) / len(words) < 0.20:
+    # Only trigger on long-and-repetitive output.
+    if len(letters) >= 15 and unique_ratio < 0.08:
         return True
     # Non-Latin/Cyrillic exotic script dominance (Uzbek uses Latin/Cyrillic).
     exotic = sum(1 for c in letters if ord(c) > 0x500)
